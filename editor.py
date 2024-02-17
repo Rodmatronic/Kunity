@@ -6,7 +6,7 @@ from tkinter import *
 import os
 from PIL import Image, ImageTk
 
-global_ver = "1.0"
+global_ver = "0.1"
 
 # The default object
 verticies = ((1, -1, -1), (1, 1, -1), (-1, 1, -1), (-1, -1, -1),
