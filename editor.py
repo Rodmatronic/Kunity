@@ -159,9 +159,24 @@ def main():
 
         Label(top, text="Ver " + global_ver, bg="#333", fg="White",font=('Mistral 18 bold')).place(x=5, y=100)
 
+    def create_kasset():
+        # Get the name of the new object
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        if object_name:
+            # Create a new file with the given name and the ".kasset" extension
+            with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
+                file.write("")
+
+            # Refresh the file view
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+
     # Set dark mode theme
     style = ttk.Style()
     style.theme_use('clam')  # Use 'clam' theme as it's closer to dark mode
+    style.configure("TFrame", background="#333")
 
     # Configure style for Treeview
     style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333")
@@ -188,17 +203,21 @@ def main():
     top_bar_frame.pack(fill=tk.X)
 
     play_button = ttk.Button(top_bar_frame, text="Play", command=compileandrun)
-    play_button.pack(side=tk.LEFT, padx=5, pady=5)
+    play_button.pack(side=tk.LEFT, padx=5, pady=3)
 
     stop_button = ttk.Button(top_bar_frame, text="Stop", command=stopplay)
-    stop_button.pack(side=tk.LEFT, padx=5, pady=5)
+    stop_button.pack(side=tk.LEFT, padx=5, pady=3)
 
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
-    left_frame = ttk.Frame(paned_window, width=300, height=500)
+    left_frame = ttk.Frame(paned_window, width=300, height=500, border="0")
     editor = ttk.Frame(paned_window, width=400, height=600)
     paned_window.add(left_frame)
     paned_window.add(editor)
     paned_window.pack(fill=tk.BOTH, expand=True)
+
+    # Add a label at the top of the left_frame
+    hierarchy_label = ttk.Label(left_frame, text="Hierarchy", background="#333", foreground="#FFFFFF")
+    hierarchy_label.pack(padx=5, pady=2, side= TOP, anchor="w")
 
     # Create a Treeview widget
     tree = ttk.Treeview(left_frame)
@@ -208,6 +227,15 @@ def main():
     frm = editorenv(master=editor, height=600, width=400)
     frm.animate = 10
     frm.pack(fill=tk.BOTH, expand=True)
+
+    # Add a "+" button to create a new ".kasset" object
+    create_button = ttk.Button(left_frame, text="+", command=create_kasset)
+    create_button.pack(side=tk.RIGHT, padx=5, pady=3)
+
+    # Add an entry field to enter the name of the new object
+    new_object_entry = ttk.Entry(left_frame)
+    new_object_entry.pack(side=tk.RIGHT, padx=5, pady=3)
+    new_object_entry.insert(0, "NewObject")
 
     root.bind("<Key>", on_key)
     return root.mainloop()
