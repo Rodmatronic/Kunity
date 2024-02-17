@@ -48,6 +48,12 @@ def populate_tree(tree, node, parent=""):
     else:
         tree.insert(parent, "end", text=os.path.basename(node))
 
+def compileandrun():
+    logwrite("Play")
+
+def stopplay():
+    logwrite("Stop")
+
 def Cube():
     GL.glBegin(GL.GL_LINES)
     for edge in edges:
@@ -56,7 +62,7 @@ def Cube():
     GL.glEnd()
 
 
-class CubeSpinner(OpenGLFrame):
+class editorenv(OpenGLFrame):
     def initgl(self):
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
@@ -144,13 +150,12 @@ def main():
         top.title("About Kunity")
         top.configure(bg="#333")
 
-        # Load the image
+        # Load the about image
         image = PhotoImage(file="./kunity.logo.png")
 
-        # Create a label to display the image
         image_label = Label(top, image=image, bg="#333")
         image_label.image = image  # Keep a reference to the image to prevent it from being garbage collected
-        image_label.place(x=0, y=0)  # Adjust the position as needed
+        image_label.place(x=0, y=0)
 
         Label(top, text="Ver " + global_ver, bg="#333", fg="White",font=('Mistral 18 bold')).place(x=5, y=100)
 
@@ -178,6 +183,16 @@ def main():
 
     root.config(menu=menubar)
 
+    # Create a Frame for the second bar
+    top_bar_frame = ttk.Frame(root)
+    top_bar_frame.pack(fill=tk.X)
+
+    play_button = ttk.Button(top_bar_frame, text="Play", command=compileandrun)
+    play_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    stop_button = ttk.Button(top_bar_frame, text="Stop", command=stopplay)
+    stop_button.pack(side=tk.LEFT, padx=5, pady=5)
+
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
     left_frame = ttk.Frame(paned_window, width=300, height=500)
     editor = ttk.Frame(paned_window, width=400, height=600)
@@ -190,7 +205,7 @@ def main():
     tree.pack(fill='both', expand=True)
     populate_tree(tree, "./scene")
 
-    frm = CubeSpinner(master=editor, height=600, width=400)
+    frm = editorenv(master=editor, height=600, width=400)
     frm.animate = 10
     frm.pack(fill=tk.BOTH, expand=True)
 
