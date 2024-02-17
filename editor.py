@@ -18,6 +18,7 @@ edges = ((0, 1), (0, 3), (0, 4), (2, 1), (2, 3), (2, 7),
 root = tk.Tk()
 root.geometry("1100x600")
 root.title("Kunity")
+root.iconbitmap("logo.ico")
 
 try:
     os.remove("kubuntu.logfile.txt") 
