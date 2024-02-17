@@ -21,13 +21,13 @@ root.title("Kunity")
 root.iconbitmap("logo.ico")
 
 try:
-    os.remove("kubuntu.logfile.txt") 
+    os.remove("Kunity.logfile.txt") 
 except:
     print("No previous logfile! Nothing to remove")
 
 def logwrite(log):
     print(log)
-    logfile = open("kubuntu.logfile.txt", "a")
+    logfile = open("Kunity.logfile.txt", "a")
     logfile.write(log + "\n")
     logfile.close()
 
@@ -191,8 +191,10 @@ def main():
     filemenu.add_command(label="Exit", command=safe_exit)
     menubar.add_cascade(label="File", menu=filemenu)
 
+    editmenu = Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="Edit", menu=editmenu)
+
     helpmenu = Menu(menubar, tearoff=0)
-    helpmenu.add_command(label="Help Index", command=donothing)
     helpmenu.add_command(label="About...", command=open_about)
     menubar.add_cascade(label="Help", menu=helpmenu)
 
@@ -209,7 +211,7 @@ def main():
     stop_button.pack(side=tk.LEFT, padx=5, pady=3)
 
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
-    left_frame = ttk.Frame(paned_window, width=300, height=500, border="0")
+    left_frame = ttk.Frame(paned_window, width=400, height=500, border="0")
     editor = ttk.Frame(paned_window, width=400, height=600)
     paned_window.add(left_frame)
     paned_window.add(editor)
