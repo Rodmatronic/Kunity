@@ -57,20 +57,65 @@ def stopplay():
     logwrite("Stop")
 
 def Cube():
-    GL.glBegin(GL.GL_LINES)
-    for edge in edges:
-        for vertex in edge:
-            GL.glVertex3fv(verticies[vertex])
+    # Check if the cube asset file exists
+    asset_file = "./scene/assets/cube.kasset"
+    if not os.path.exists(asset_file):
+        logwrite("Cube asset file not found!")
+        # Render the floor and exit the function
+        render_floor()
+        return
+
+    # Initialize lists to store data read from the asset file
+    vertices = []
+    edges = []
+    colors = []
+    surfaces = []
+
+    # Read data from the asset file
+    with open(asset_file, "r") as file:
+        for line in file:
+            if line.startswith("Vertices:"):
+                vertices_data = line.split(":")[1].strip().split(",")
+                vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
+            elif line.startswith("Edges:"):
+                edges_data = line.split(":")[1].strip().split(",")
+                edges = [tuple(map(int, edge.split())) for edge in edges_data]
+            elif line.startswith("Colors:"):
+                colors_data = line.split(":")[1].strip().split(",")
+                colors = [tuple(map(float, color.split())) for color in colors_data]
+            elif line.startswith("Surfaces:"):
+                surfaces_data = line.split(":")[1].strip().split(",")
+                surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
+
+    # Check if all necessary data has been read
+    if not vertices or not edges or not colors or not surfaces:
+        logwrite("Incomplete data in the cube asset file!")
+        # Render the floor and exit the function
+        render_floor()
+        return
+
+    # Render the cube using the data from the asset file
+    GL.glBegin(GL.GL_QUADS)
+    for surface in surfaces:
+        color = colors[surfaces.index(surface)]
+        for vertex in surface:
+            GL.glColor3fv(color)
+            GL.glVertex3fv(vertices[vertex])
     GL.glEnd()
 
     # Draw the ground
+    render_floor()
+
+def render_floor():
+    color = (0.5, 0.5, 0.5)  # Grey
+    GL.glColor3fv(color)
     GL.glBegin(GL.GL_LINES)
     for x in range(-5, 6):
         GL.glVertex3f(x, -1, -5)
         GL.glVertex3f(x, -1, 5)
     for z in range(-5, 6):
         GL.glVertex3f(-5, -1, z)
-        GL.glVertex3f(5, -1, z) 
+        GL.glVertex3f(5, -1, z)
     GL.glEnd()
 
 class editorenv(OpenGLFrame):
@@ -78,6 +123,7 @@ class editorenv(OpenGLFrame):
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(0.0, 0.0, -5)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         self.camera_x = 0.0
         self.camera_y = 0.0
         self.camera_z = -5.0
@@ -86,6 +132,7 @@ class editorenv(OpenGLFrame):
 
     def redraw(self):
         GL.glLoadIdentity()
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
         GL.glRotatef(self.view_angle_x, 1, 0, 0)
@@ -203,14 +250,32 @@ def main():
         object_name = new_object_entry.get()
 
         # Check if the name is not empty
+        print("Attempting to create file:", object_name)
         if object_name:
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
+                print("Created file:", object_name)
                 file.write("[Kunity object]\nObject:")
 
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+
+    def delete_selected():
+        # Get selected items from the Treeview
+        selected_items = tree.selection()
+        for item in selected_items:
+            file_name = tree.item(item, "text")
+            file_path = os.path.join("./scene/Assets/", file_name)
+            print("Attempting to delete file:", file_path)
+            try:
+                # Remove the file from the file system
+                os.remove(file_path)
+                # Delete the item from the Treeview
+                tree.delete(item)
+                print("File deleted successfully.")
+            except FileNotFoundError:
+                print("File not found:", file_path)
 
     # Set dark mode theme
     style = ttk.Style()
@@ -284,6 +349,10 @@ def main():
     tree = ttk.Treeview(left_frame)
     tree.pack(fill='both', expand=True)
     populate_tree(tree, "./scene")
+
+    # Add a "Delete" button next to the Treeview
+    delete_button = ttk.Button(left_frame, text="Delete", command=delete_selected)
+    delete_button.pack(side=tk.LEFT, padx=5, pady=3)
 
     frm = editorenv(master=editor, height=600, width=400)
     frm.animate = 10
