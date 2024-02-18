@@ -7,6 +7,7 @@ import os
 from PIL import Image, ImageTk
 
 global_ver = "0.1"
+global_year = "2024"
 
 # The default object
 verticies = ((1, -1, -1), (1, 1, -1), (-1, 1, -1), (-1, -1, -1),
@@ -17,7 +18,7 @@ edges = ((0, 1), (0, 3), (0, 4), (2, 1), (2, 3), (2, 7),
 
 root = tk.Tk()
 root.geometry("1100x600")
-root.title("Kunity")
+root.title("New Scene - " + "Kunity " + global_year + " " + global_ver)
 root.iconbitmap("logo.ico")
 
 try:
@@ -155,18 +156,36 @@ def main():
     def open_about():
         logwrite("About menu open")
         top = Toplevel(root)
-        top.geometry("320x350")
+        top.geometry("550x450")
         top.title("About Kunity")
         top.configure(bg="#333")
+        top.resizable(False, False)  # Making the window unresizable
+
+        # Setting the window as a tool window
+        if os.name == 'nt':  # Check if the operating system is Windows
+            top.wm_attributes("-toolwindow", 1)
 
         # Load the about image
-        image = PhotoImage(file="./kunity.logo.png")
-
+        image = PhotoImage(file="./images/kunity.logo.png")
         image_label = Label(top, image=image, bg="#333")
         image_label.image = image  # Keep a reference to the image to prevent it from being garbage collected
-        image_label.place(x=0, y=0)
+        image_label.place(x=20, y=20)
 
-        Label(top, text="Ver " + global_ver, bg="#333", fg="White",font=('Mistral 18 bold')).place(x=5, y=100)
+        # Load the python image
+        pyimage = PhotoImage(file="./images/python.logo.png")
+        image_label = Label(top, image=pyimage, bg="#333")
+        image_label.image = pyimage  # Keep a reference to the image to prevent it from being garbage collected
+        image_label.place(x=50, y=190)
+
+        # Load the python image
+        openglimage = PhotoImage(file="./images/opengl.logo.png")
+        image_label = Label(top, image=openglimage, bg="#333")
+        image_label.image = openglimage  # Keep a reference to the image to prevent it from being garbage collected
+        image_label.place(x=190, y=190)
+
+        Label(top, text="Ver " + global_ver + " " + global_year, bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=130)
+        Label(top, text="Python powered", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=42, y=290)
+        Label(top, text="OpenGL powered", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=180, y=290)
 
     def create_kasset():
         # Get the name of the new object
@@ -209,6 +228,12 @@ def main():
 
     editmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Edit", menu=editmenu)
+
+    preferencesmenu = Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="Preferences", menu=preferencesmenu)
+
+    windowmenu = Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="Window", menu=windowmenu)
 
     helpmenu = Menu(menubar, tearoff=0)
     helpmenu.add_command(label="About...", command=open_about)
