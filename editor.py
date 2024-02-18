@@ -177,10 +177,17 @@ def main():
     style = ttk.Style()
     style.theme_use('clam')  # Use 'clam' theme as it's closer to dark mode
     style.configure("TFrame", background="#333")
+    style.configure(".", background="#333", foreground="#ddd")  # Default background and foreground colors
+    style.configure(".", bordercolor="#666")  # Default border color for all widgets
 
     # Configure style for Treeview
-    style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333")
+    style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333", bordercolor="#666")
     style.map("Treeview", background=[('selected', '#666')])
+
+    # Configure style for buttons
+    style.configure("TButton", background="#383838", foreground="white", bordercolor="#666")  # Normal state: light grey background, white text
+    style.map("TButton", background=[('active', '#ddd')])  # Hover state: slightly lighter grey background
+    style.map("TButton", background=[('pressed', '#000')])  # Pressed state: dark grey background
 
     menubar = Menu(root)
     filemenu = Menu(menubar, tearoff=0)
@@ -211,7 +218,7 @@ def main():
     stop_button.pack(side=tk.LEFT, padx=5, pady=3)
 
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
-    left_frame = ttk.Frame(paned_window, width=400, height=500, border="0")
+    left_frame = ttk.Frame(paned_window, relief="flat", width=400, height=500)
     editor = ttk.Frame(paned_window, width=400, height=600)
     paned_window.add(left_frame)
     paned_window.add(editor)
