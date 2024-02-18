@@ -70,6 +70,7 @@ def compileandrun():
 
 def stopplay():
     logwrite("Stop")
+
 def Cube():
     # Find all .kasset files in the specified directory
     asset_files = glob.glob("./scene/Assets/*.kasset")
@@ -88,7 +89,6 @@ def Cube():
                 if line.startswith("Vertices:"):
                     vertices_data = line.split(":")[1].strip().split(",")
                     vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
-                    print("Vertices:", vertices)  # Print vertices for debugging
                 elif line.startswith("Edges:"):
                     edges_data = line.split(":")[1].strip().split(",")
                     edges = [tuple(map(int, edge.split())) for edge in edges_data]
@@ -268,8 +268,7 @@ def main():
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
                 print("Created file:", object_name)
-                file.write("[Kunity object]\nObject:")
-
+                file.write("[Kunity object]\nVertices:\nEdges:\nColors:\nSurfaces:")
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
