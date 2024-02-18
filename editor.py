@@ -114,31 +114,40 @@ class editorenv(OpenGLFrame):
 
 
 def main():
+    key_pressed = {}
+
     def on_key(event):
-        if event.keysym == "w":
-            logwrite("Moving main camera foward")
+        if event.keysym not in key_pressed or not key_pressed[event.keysym]:
+            key_pressed[event.keysym] = True
+            move_camera(event.keysym)
+
+    def on_key_release(event):
+        key_pressed[event.keysym] = False
+
+    def move_camera(direction):
+        step = 0.01
+        if direction == "w":
             frm.move_camera("forward")
-        elif event.keysym == "s":
-            logwrite("Moving main camera backward")
+        elif direction == "s":
             frm.move_camera("backward")
-        elif event.keysym == "a":
-            logwrite("Moving main camera right")
+        elif direction == "a":
             frm.move_camera("sideways_right")
-        elif event.keysym == "d":
-            logwrite("Moving main camera left")
+        elif direction == "d":
             frm.move_camera("sideways_left")
-        elif event.keysym == "Left":
-            logwrite("Turning main camera to the left")
+        elif direction == "Right":
             frm.rotate_camera("left_arrow")
-        elif event.keysym == "Right":
-            logwrite("Turning main camera to the right")
+        elif direction == "Left":
             frm.rotate_camera("right_arrow")
-        elif event.keysym == "Up":
-            logwrite("Turning main camera upwards")
+        elif direction == "Up":
             frm.rotate_camera("up_arrow")
-        elif event.keysym == "Down":
-            logwrite("Turning main camera downards")
+        elif direction == "Down":
             frm.rotate_camera("down_arrow")
+        
+        if key_pressed.get(direction):
+            root.after(15, lambda: move_camera(direction))
+
+    root.bind("<KeyPress>", on_key)
+    root.bind("<KeyRelease>", on_key_release)
 
     def donothing():
         print("Placeholder")
@@ -182,7 +191,7 @@ def main():
 
     # Configure style for Treeview
     style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333", bordercolor="#666")
-    style.map("Treeview", background=[('selected', '#666')])
+    style.map("Treeview", background=[('selected', '#2c5d87')])
 
     # Configure style for buttons
     style.configure("TButton", background="#383838", foreground="white", bordercolor="#666")  # Normal state: light grey background, white text
@@ -211,11 +220,17 @@ def main():
     top_bar_frame = ttk.Frame(root)
     top_bar_frame.pack(fill=tk.X)
 
-    play_button = ttk.Button(top_bar_frame, text="Play", command=compileandrun)
-    play_button.pack(side=tk.LEFT, padx=5, pady=3)
+    play_button = ttk.Button(top_bar_frame, text="Play", command=compileandrun, width=5)
+    play_button.config(padding=(5, 2))  # Adjust the padding to make the button less tall
+    play_button.pack(side=tk.LEFT, pady=3)
 
-    stop_button = ttk.Button(top_bar_frame, text="Stop", command=stopplay)
-    stop_button.pack(side=tk.LEFT, padx=5, pady=3)
+    pause_button = ttk.Button(top_bar_frame, text="Pause", command=compileandrun, width=5)
+    pause_button.config(padding=(5, 2))  # Adjust the padding to make the button less tall
+    pause_button.pack(side=tk.LEFT, pady=3)
+
+    stop_button = ttk.Button(top_bar_frame, text="Stop", command=stopplay, width=5)
+    stop_button.config(padding=(5, 2))  # Adjust the padding to make the button less tall
+    stop_button.pack(side=tk.LEFT, pady=3)
 
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
     left_frame = ttk.Frame(paned_window, relief="flat", width=400, height=500)
