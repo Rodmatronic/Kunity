@@ -1,10 +1,11 @@
 import tkinter as tk
+import tkinter.filedialog as filedialog
 from tkinter import ttk
+from tkinter import *
+from PIL import Image, ImageTk
 from pyopengltk import OpenGLFrame
 from OpenGL import GL, GLU
-from tkinter import *
 import os
-from PIL import Image, ImageTk
 
 global_ver = "0.1"
 global_year = "2024"
@@ -175,17 +176,18 @@ def main():
         pyimage = PhotoImage(file="./images/python.logo.png")
         image_label = Label(top, image=pyimage, bg="#333")
         image_label.image = pyimage  # Keep a reference to the image to prevent it from being garbage collected
-        image_label.place(x=50, y=190)
+        image_label.place(x=50, y=240)
 
         # Load the python image
         openglimage = PhotoImage(file="./images/opengl.logo.png")
         image_label = Label(top, image=openglimage, bg="#333")
         image_label.image = openglimage  # Keep a reference to the image to prevent it from being garbage collected
-        image_label.place(x=190, y=190)
+        image_label.place(x=180, y=240)
 
-        Label(top, text="Ver " + global_ver + " " + global_year, bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=130)
-        Label(top, text="Python powered", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=42, y=290)
-        Label(top, text="OpenGL powered", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=180, y=290)
+        Label(top, text="Powered by:", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=42, y=180)
+
+
+        Label(top, text="Ver " + global_ver + " " + global_year, bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=145)
 
     def create_kasset():
         # Get the name of the new object
@@ -195,7 +197,7 @@ def main():
         if object_name:
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
-                file.write("")
+                file.write("[Kunity object]\nObject:")
 
             # Refresh the file view
             tree.delete(*tree.get_children())
