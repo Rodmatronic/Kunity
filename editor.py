@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 from pyopengltk import OpenGLFrame
 from OpenGL import GL, GLU
 import os
+import glob
 
 global_ver = "0.1"
 global_year = "2024"
@@ -46,65 +47,77 @@ def populate_tree(tree, node, parent=""):
         else:
             parent_id = tree.insert("", "end", text=os.path.basename(node), open=True)
         for item in os.listdir(node):
-            populate_tree(tree, os.path.join(node, item), parent=parent_id)
+            item_path = os.path.join(node, item)
+            if os.path.isdir(item_path):
+                populate_tree(tree, item_path, parent=parent_id)
+            else:
+                with open(item_path, "r") as file:
+                    first_line = file.readline().strip()
+                    if first_line == "[Kunity object]":
+                        second_line = file.readline().strip()
+                        if second_line.startswith("[Type: Poly]"):
+                            tree.insert(parent_id, "end", text=item, tags=("kasset",))
+                        else:
+                            tree.insert(parent_id, "end", text=item)
+                    else:
+                        tree.insert(parent_id, "end", text=item)
     else:
         tree.insert(parent, "end", text=os.path.basename(node))
+
 
 def compileandrun():
     logwrite("Play")
 
 def stopplay():
     logwrite("Stop")
-
 def Cube():
-    # Check if the cube asset file exists
-    asset_file = "./scene/assets/cube.kasset"
-    if not os.path.exists(asset_file):
-        logwrite("Cube asset file not found!")
-        # Render the floor and exit the function
-        render_floor()
-        return
+    # Find all .kasset files in the specified directory
+    asset_files = glob.glob("./scene/Assets/*.kasset")
+    
+    # Iterate over each .kasset file
+    for asset_file in asset_files:
+        # Initialize lists to store data read from the asset file
+        vertices = []
+        edges = []
+        face_colors = []  # Separate list for face colors
+        surfaces = []
 
-    # Initialize lists to store data read from the asset file
-    vertices = []
-    edges = []
-    colors = []
-    surfaces = []
+        # Read data from the asset file
+        with open(asset_file, "r") as file:
+            for line in file:
+                if line.startswith("Vertices:"):
+                    vertices_data = line.split(":")[1].strip().split(",")
+                    vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
+                    print("Vertices:", vertices)  # Print vertices for debugging
+                elif line.startswith("Edges:"):
+                    edges_data = line.split(":")[1].strip().split(",")
+                    edges = [tuple(map(int, edge.split())) for edge in edges_data]
+                elif line.startswith("Colors:"):
+                    colors_data = line.split(":")[1].strip().split(",")
+                    face_colors = [tuple(map(float, color.split())) for color in colors_data]  # Store face colors separately
+                elif line.startswith("Surfaces:"):
+                    surfaces_data = line.split(":")[1].strip().split(",")
+                    surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
 
-    # Read data from the asset file
-    with open(asset_file, "r") as file:
-        for line in file:
-            if line.startswith("Vertices:"):
-                vertices_data = line.split(":")[1].strip().split(",")
-                vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
-            elif line.startswith("Edges:"):
-                edges_data = line.split(":")[1].strip().split(",")
-                edges = [tuple(map(int, edge.split())) for edge in edges_data]
-            elif line.startswith("Colors:"):
-                colors_data = line.split(":")[1].strip().split(",")
-                colors = [tuple(map(float, color.split())) for color in colors_data]
-            elif line.startswith("Surfaces:"):
-                surfaces_data = line.split(":")[1].strip().split(",")
-                surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
-
-    # Check if all necessary data has been read
-    if not vertices or not edges or not colors or not surfaces:
-        logwrite("Incomplete data in the cube asset file!")
-        # Render the floor and exit the function
-        render_floor()
-        return
-
-    # Render the cube using the data from the asset file
-    GL.glBegin(GL.GL_QUADS)
-    for surface in surfaces:
-        color = colors[surfaces.index(surface)]
-        for vertex in surface:
-            GL.glColor3fv(color)
-            GL.glVertex3fv(vertices[vertex])
-    GL.glEnd()
+        # Check if all necessary data has been read
+        if not vertices or not edges or not face_colors or not surfaces:
+            logwrite(f"Incomplete data in the asset file: {asset_file}")
+            continue  # Move to the next asset file
+        
+        # Render the object using the data from the asset file
+        GL.glBegin(GL.GL_QUADS)
+        for surface, color in zip(surfaces, face_colors):  # Iterate over surfaces and corresponding colors
+            for vertex in surface:
+                GL.glColor3fv(color)  # Set color for the current face
+                if vertex < len(vertices):
+                    GL.glVertex3fv(vertices[vertex])
+                else:
+                    print(f"Index {vertex} is out of range for vertices list with length {len(vertices)}")
+        GL.glEnd()
 
     # Draw the ground
     render_floor()
+
 
 def render_floor():
     color = (0.5, 0.5, 0.5)  # Grey
