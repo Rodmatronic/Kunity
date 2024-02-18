@@ -63,6 +63,15 @@ def Cube():
             GL.glVertex3fv(verticies[vertex])
     GL.glEnd()
 
+    # Draw the ground
+    GL.glBegin(GL.GL_LINES)
+    for x in range(-5, 6):
+        GL.glVertex3f(x, -1, -5)
+        GL.glVertex3f(x, -1, 5)
+    for z in range(-5, 6):
+        GL.glVertex3f(-5, -1, z)
+        GL.glVertex3f(5, -1, z) 
+    GL.glEnd()
 
 class editorenv(OpenGLFrame):
     def initgl(self):
@@ -218,6 +227,7 @@ def main():
     style.configure("TButton", background="#383838", foreground="white", bordercolor="#666")  # Normal state: light grey background, white text
     style.map("TButton", background=[('active', '#ddd')])  # Hover state: slightly lighter grey background
     style.map("TButton", background=[('pressed', '#000')])  # Pressed state: dark grey background
+    style.map("TEntry", foreground="White", background="#333")  # Pressed state: dark grey background
 
     menubar = Menu(root)
     filemenu = Menu(menubar, tearoff=0)
