@@ -8,8 +8,11 @@ from OpenGL import GL, GLU
 import os
 import glob
 
+# Some global configurations
+
 global_ver = "0.12"
 global_year = "2024"
+global_scene_noshade_brightness = 3.0, 3.0, 3.0
 
 # The default object
 verticies = ((1, -1, -1), (1, 1, -1), (-1, 1, -1), (-1, -1, -1),
@@ -141,7 +144,7 @@ def draw_textured_quad(texture_id, vertices, surface):
 
 def renderXYdepth():
 
-    color = (1.0, 1.0, 1.0)  # Grey
+    color = (3.0, 3.0, 3.0)
 
     GL.glColor3fv(color)
     GL.glBegin(GL.GL_LINES)
@@ -338,17 +341,16 @@ def main():
     style = ttk.Style()
     style.theme_use('clam')  # Use 'clam' theme as it's closer to dark mode
     style.configure("TFrame", background="#333")
-    style.configure(".", background="#333", foreground="#ddd")  # Default background and foreground colors
-    style.configure(".", bordercolor="#666")  # Default border color for all widgets
+    style.configure(".", background="#484848", foreground="#ddd", bordercolor="000")  # Default background and foreground colors
+    style.configure("TEntry", foreground="White", background="#FFF", fieldbackground="#FFF", bordercolor="#222")  
 
     # Configure style for Treeview
     style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333", bordercolor="#666")
     style.map("Treeview", background=[('selected', '#2c5d87')])
 
     # Configure style for buttons
-    style.configure("TButton", background="#383838", foreground="white", bordercolor="#666")  # Normal state: light grey background, white text
     style.map("TButton", background=[('active', '#ddd')])  # Hover state: slightly lighter grey background
-    style.map("TButton", background=[('pressed', '#000')])  # Pressed state: dark grey background
+    style.map("TButton", background=[('pressed', '#222')])  # Pressed state: dark grey background
     style.map("TEntry", foreground="White", background="#333")  # Pressed state: dark grey background
 
     menubar = Menu(root)
@@ -397,16 +399,28 @@ def main():
     top_bar_frame = ttk.Frame(root)
     top_bar_frame.pack(fill=tk.X)
 
-    play_button = ttk.Button(top_bar_frame, text="Play", command=compileandrun, width=5)
-    play_button.config(padding=(5, 2))  # Adjust the padding to make the button less tall
+    # Load the images
+    play_image = Image.open("./images/icons/play.png")
+    pause_image = Image.open("./images/icons/pause.png")
+    stop_image = Image.open("./images/icons/stop.png")
+
+    play_image = play_image.resize((25, 25), Image.Resampling.LANCZOS)
+    pause_image = pause_image.resize((25, 25), Image.Resampling.LANCZOS)
+    stop_image = stop_image.resize((25, 25), Image.Resampling.LANCZOS)
+
+    # Convert PIL images to Tkinter PhotoImage objects
+    play_photo = ImageTk.PhotoImage(play_image)
+    pause_photo = ImageTk.PhotoImage(pause_image)
+    stop_photo = ImageTk.PhotoImage(stop_image)
+
+    # Update button creation with images
+    play_button = ttk.Button(top_bar_frame, image=play_photo, command=compileandrun)
+    pause_button = ttk.Button(top_bar_frame, image=pause_photo, command=compileandrun)
+    stop_button = ttk.Button(top_bar_frame, image=stop_photo, command=stopplay)
+
+    # Pack buttons
     play_button.pack(side=tk.LEFT, pady=3)
-
-    pause_button = ttk.Button(top_bar_frame, text="Pause", command=compileandrun, width=5)
-    pause_button.config(padding=(5, 2))  # Adjust the padding to make the button less tall
     pause_button.pack(side=tk.LEFT, pady=3)
-
-    stop_button = ttk.Button(top_bar_frame, text="Stop", command=stopplay, width=5)
-    stop_button.config(padding=(5, 2))  # Adjust the padding to make the button less tall
     stop_button.pack(side=tk.LEFT, pady=3)
 
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
