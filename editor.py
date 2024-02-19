@@ -8,7 +8,7 @@ from OpenGL import GL, GLU
 import os
 import glob
 
-global_ver = "0.1"
+global_ver = "0.12"
 global_year = "2024"
 
 # The default object
@@ -47,22 +47,10 @@ def populate_tree(tree, node, parent=""):
         else:
             parent_id = tree.insert("", "end", text=os.path.basename(node), open=True)
         for item in os.listdir(node):
-            item_path = os.path.join(node, item)
-            if os.path.isdir(item_path):
-                populate_tree(tree, item_path, parent=parent_id)
-            else:
-                with open(item_path, "r") as file:
-                    first_line = file.readline().strip()
-                    if first_line == "[Kunity object]":
-                        second_line = file.readline().strip()
-                        if second_line.startswith("[Type: Poly]"):
-                            tree.insert(parent_id, "end", text=item, tags=("kasset",))
-                        else:
-                            tree.insert(parent_id, "end", text=item)
-                    else:
-                        tree.insert(parent_id, "end", text=item)
+            populate_tree(tree, os.path.join(node, item), parent=parent_id)
     else:
         tree.insert(parent, "end", text=os.path.basename(node))
+
 
 
 def compileandrun():
@@ -71,10 +59,12 @@ def compileandrun():
 def stopplay():
     logwrite("Stop")
 
-def Cube():
+def RenderAll():
     # Find all .kasset files in the specified directory
     asset_files = glob.glob("./scene/Assets/*.kasset")
     
+    renderXYdepth()
+
     # Iterate over each .kasset file
     for asset_file in asset_files:
         # Initialize lists to store data read from the asset file
@@ -82,6 +72,7 @@ def Cube():
         edges = []
         face_colors = []  # Separate list for face colors
         surfaces = []
+        image_path = None  # Initialize image path variable
 
         # Read data from the asset file
         with open(asset_file, "r") as file:
@@ -98,29 +89,60 @@ def Cube():
                 elif line.startswith("Surfaces:"):
                     surfaces_data = line.split(":")[1].strip().split(",")
                     surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
+                elif line.startswith("Image:"):  # Check for image path flag
+                    image_path = line.split(":")[1].strip()  # Extract image path
 
         # Check if all necessary data has been read
-        if not vertices or not edges or not face_colors or not surfaces:
+        if not vertices or not edges:
             logwrite(f"Incomplete data in the asset file: {asset_file}")
             continue  # Move to the next asset file
         
-        # Render the object using the data from the asset file
-        GL.glBegin(GL.GL_QUADS)
-        for surface, color in zip(surfaces, face_colors):  # Iterate over surfaces and corresponding colors
-            for vertex in surface:
-                GL.glColor3fv(color)  # Set color for the current face
-                if vertex < len(vertices):
-                    GL.glVertex3fv(vertices[vertex])
-                else:
-                    print(f"Index {vertex} is out of range for vertices list with length {len(vertices)}")
-        GL.glEnd()
+        # If image path is specified, draw textured quads
+        if image_path:
+            # Load the texture
+            texture_id = load_texture(image_path)
+            # Draw textured quad for each surface
+            for surface in surfaces:
+                draw_textured_quad(texture_id, vertices, surface)
+        else:
+            GL.glBegin(GL.GL_QUADS)
+            for surface, color in zip(surfaces, face_colors): 
+                for vertex in surface:
+                    GL.glColor3fv(color)
+                    if vertex < len(vertices):
+                        GL.glVertex3fv(vertices[vertex])
+                    else:
+                        print(f"Index {vertex} is out of range for vertices list with length {len(vertices)}")
+            
+            GL.glEnd()
 
-    # Draw the ground
-    render_floor()
+def draw_textured_quad(texture_id, vertices, surface):
+    # Bind the texture
+    GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
+    # Start drawing quads
+    GL.glBegin(GL.GL_QUADS)
+    # Loop through each vertex in the surface
+    for vertex in surface:
+        # Get the texture coordinates based on vertex index
+        tex_coords = (0.0, 0.0)
+        if vertex == 0:
+            tex_coords = (0.0, 1.0)
+        elif vertex == 1:
+            tex_coords = (1.0, 1.0)
+        elif vertex == 2:
+            tex_coords = (1.0, 0.0)
+        elif vertex == 3:
+            tex_coords = (0.0, 0.0)
+        # Set the texture coordinates and vertex position
+        GL.glTexCoord2f(tex_coords[0], tex_coords[1])
+        GL.glVertex3fv(vertices[vertex])
+    # End drawing quads
+    GL.glEnd()
 
+def renderXYdepth():
 
-def render_floor():
-    color = (0.5, 0.5, 0.5)  # Grey
+    color = (1.0, 1.0, 1.0)  # Grey
+
     GL.glColor3fv(color)
     GL.glBegin(GL.GL_LINES)
     for x in range(-5, 6):
@@ -131,12 +153,35 @@ def render_floor():
         GL.glVertex3f(5, -1, z)
     GL.glEnd()
 
+def load_texture(texture_path):
+    try:
+        texture_image = Image.open(texture_path)
+    except IOError as ex:
+        print("Failed to open texture file:", texture_path)
+        return None
+    
+    texture_data = texture_image.tobytes("raw", "RGBA", 0, -1)
+    texture_width, texture_height = texture_image.size
+    texture_image.close()
+    
+    texture_id = GL.glGenTextures(1)
+    GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
+    GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
+    GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
+    GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
+    GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+    GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+    GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, texture_width, texture_height, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, texture_data)
+    
+    return texture_id
+
 class editorenv(OpenGLFrame):
     def initgl(self):
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(0.0, 0.0, -5)
         GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
         self.camera_x = 0.0
         self.camera_y = 0.0
         self.camera_z = -5.0
@@ -151,7 +196,7 @@ class editorenv(OpenGLFrame):
         GL.glRotatef(self.view_angle_x, 1, 0, 0)
         GL.glRotatef(self.view_angle_y, 0, 1, 0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        Cube()
+        RenderAll()
 
     def move_camera(self, direction):
         step = 0.1
@@ -196,7 +241,7 @@ def main():
         key_pressed[event.keysym] = False
 
     def move_camera(direction):
-        step = 0.01
+        step = 0.0001
         if direction == "w":
             frm.move_camera("forward")
         elif direction == "s":
@@ -215,7 +260,7 @@ def main():
             frm.rotate_camera("down_arrow")
         
         if key_pressed.get(direction):
-            root.after(15, lambda: move_camera(direction))
+            root.after(3, lambda: move_camera(direction))
 
     root.bind("<KeyPress>", on_key)
     root.bind("<KeyRelease>", on_key_release)
@@ -308,21 +353,39 @@ def main():
 
     menubar = Menu(root)
     filemenu = Menu(menubar, tearoff=0)
-    filemenu.add_command(label="New", command=donothing)
-    filemenu.add_command(label="Open", command=donothing)
+    filemenu.add_command(label="New Scene", command=donothing)
+    filemenu.add_command(label="Open Scene", command=donothing)
+    filemenu.add_command(label="Open Recent >", command=donothing)
+    filemenu.add_separator()
     filemenu.add_command(label="Save", command=donothing)
+    filemenu.add_command(label="Save as...", command=donothing)
     filemenu.add_separator()
     filemenu.add_command(label="Exit", command=safe_exit)
+
     menubar.add_cascade(label="File", menu=filemenu)
 
     editmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Edit", menu=editmenu)
+    editmenu.add_command(label="Undo", command=donothing)
+    editmenu.add_command(label="Redo", command=donothing)
+    editmenu.add_separator()
+    editmenu.add_command(label="Cut", command=donothing)
+    editmenu.add_command(label="Copy", command=donothing)
+    editmenu.add_command(label="Paste", command=donothing)
+    editmenu.add_separator()
+    editmenu.add_command(label="Rename", command=donothing)
 
     preferencesmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Preferences", menu=preferencesmenu)
 
     windowmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Window", menu=windowmenu)
+
+    windowmenu.add_command(label="Default", command=lambda: root.state("normal"))
+    windowmenu.add_command(label="Minimize", command=lambda: root.state("iconic"))
+    windowmenu.add_command(label="Maximize", command=lambda: root.state("zoomed"))
+    windowmenu.add_separator()
+    windowmenu.add_command(label="Close", command=safe_exit)
 
     helpmenu = Menu(menubar, tearoff=0)
     helpmenu.add_command(label="About...", command=open_about)
