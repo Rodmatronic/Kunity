@@ -341,11 +341,11 @@ def main():
     style = ttk.Style()
     style.theme_use('clam')  # Use 'clam' theme as it's closer to dark mode
     style.configure("TFrame", background="#333")
-    style.configure(".", background="#484848", foreground="#ddd", bordercolor="000")  # Default background and foreground colors
+    style.configure(".", background="#484848", foreground="#ddd", bordercolor="000", font="Calibri")  # Default background and foreground colors
     style.configure("TEntry", foreground="White", background="#FFF", fieldbackground="#FFF", bordercolor="#222")  
 
     # Configure style for Treeview
-    style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333", bordercolor="#666")
+    style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333")
     style.map("Treeview", background=[('selected', '#2c5d87')])
 
     # Configure style for buttons
@@ -419,9 +419,15 @@ def main():
     stop_button = ttk.Button(top_bar_frame, image=stop_photo, command=stopplay)
 
     # Pack buttons
-    play_button.pack(side=tk.LEFT, pady=3)
-    pause_button.pack(side=tk.LEFT, pady=3)
-    stop_button.pack(side=tk.LEFT, pady=3)
+    play_button.pack(side=tk.LEFT, pady=3, padx=6)
+    pause_button.pack(side=tk.LEFT, pady=3, padx=6)
+    stop_button.pack(side=tk.LEFT, pady=3, padx=6)
+
+    # Toolbar
+    toolbar = ttk.Frame(root, relief="flat", height=20, style="Toolbar.TFrame")
+    toolbar.pack(side=tk.TOP, fill=tk.X)
+
+    style.configure("Toolbar.TFrame", background="#222")
 
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
     left_frame = ttk.Frame(paned_window, relief="flat", width=400, height=500)
@@ -431,8 +437,8 @@ def main():
     paned_window.pack(fill=tk.BOTH, expand=True)
 
     # Add a label at the top of the left_frame
-    hierarchy_label = ttk.Label(left_frame, text="Hierarchy", background="#333", foreground="#FFFFFF")
-    hierarchy_label.pack(padx=5, pady=2, side= TOP, anchor="w")
+    hierarchy_label = ttk.Label(toolbar, width=17, text="    Hierarchy", background="#484848", foreground="#FFFFFF")
+    hierarchy_label.pack(padx=8, pady=0, side= TOP, anchor="w")
 
     # Create a Treeview widget
     tree = ttk.Treeview(left_frame)
@@ -452,8 +458,8 @@ def main():
     create_button.pack(side=tk.RIGHT, padx=5, pady=3)
 
     # Add an entry field to enter the name of the new object
-    new_object_entry = ttk.Entry(left_frame)
-    new_object_entry.pack(side=tk.RIGHT, padx=5, pady=3)
+    new_object_entry = ttk.Entry(left_frame, font=("Calibri", 8))  # Set font to Consolas and increase font size
+    new_object_entry.pack(side=tk.RIGHT, padx=5, pady=3, fill=tk.X, expand=True)  # Make the entry field fill the available space horizontally
     new_object_entry.insert(0, "NewObject")
 
     root.bind("<Key>", on_key)
