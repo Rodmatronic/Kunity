@@ -7,12 +7,14 @@ from pyopengltk import OpenGLFrame
 from OpenGL import GL, GLU
 import os
 import glob
+import gc
 
 # Some global configurations
 
 global_ver = "0.12"
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
+redraw = 0
 
 # The default object
 verticies = ((1, -1, -1), (1, 1, -1), (-1, 1, -1), (-1, -1, -1),
@@ -118,10 +120,15 @@ def RenderAll():
             GL.glEnd()
 
 def draw_textured_quad(texture_id, vertices, surface):
+    # Convert texture_id to integer if necessary
+    texture_id = int(texture_id)
+
     # Bind the texture
     GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
+
     # Start drawing quads
     GL.glBegin(GL.GL_QUADS)
+
     # Loop through each vertex in the surface
     for vertex in surface:
         # Get the texture coordinates based on vertex index
@@ -134,11 +141,14 @@ def draw_textured_quad(texture_id, vertices, surface):
             tex_coords = (1.0, 0.0)
         elif vertex == 3:
             tex_coords = (0.0, 0.0)
+
         # Set the texture coordinates and vertex position
         GL.glTexCoord2f(tex_coords[0], tex_coords[1])
         GL.glVertex3fv(vertices[vertex])
+
     # End drawing quads
     GL.glEnd()
+    GL.glDeleteTextures(texture_id)
 
 def renderXYdepth():
     color = (global_scene_noshade_brightness)
@@ -173,11 +183,12 @@ def load_texture(texture_path):
     GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
     GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
     GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, texture_width, texture_height, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, texture_data)
-    
     return texture_id
 
 class editorenv(OpenGLFrame):
     def initgl(self):
+        global redraw  # Access the global scene_dirt variable
+        redraw = 0
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(0.0, 0.0, -5)
@@ -190,14 +201,27 @@ class editorenv(OpenGLFrame):
         self.view_angle_y = 0.0
 
     def redraw(self):
-        GL.glLoadIdentity()
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
-        GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
-        GL.glRotatef(self.view_angle_x, 1, 0, 0)
-        GL.glRotatef(self.view_angle_y, 0, 1, 0)
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        RenderAll()
+        global redraw
+        if redraw == 1:
+            GL.glLoadIdentity()
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+            GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
+            GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
+            GL.glRotatef(self.view_angle_x, 1, 0, 0)
+            GL.glRotatef(self.view_angle_y, 0, 1, 0)
+            RenderAll()
+            redraw = 0
+            gc.collect()
+        else:
+            GL.glLoadIdentity()
+            GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
+            GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
+            GL.glRotatef(self.view_angle_x, 1, 0, 0)
+            GL.glRotatef(self.view_angle_y, 0, 1, 0)
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+            RenderAll()
+            redraw = 0
+            gc.collect()
 
     def move_camera(self, direction):
         step = 0.1
@@ -219,7 +243,7 @@ class editorenv(OpenGLFrame):
             self.camera_x += step
 
     def rotate_camera(self, direction):
-        angle_step = 1.0
+        angle_step = 2
         if direction == "left_arrow":
             self.view_angle_y += angle_step
         elif direction == "right_arrow":
@@ -229,9 +253,10 @@ class editorenv(OpenGLFrame):
         elif direction == "down_arrow":
             self.view_angle_x -= angle_step
 
-
 def main():
     key_pressed = {}
+    global redraw
+    redraw = 0
 
     def on_key(event):
         if event.keysym not in key_pressed or not key_pressed[event.keysym]:
@@ -239,10 +264,14 @@ def main():
             move_camera(event.keysym)
 
     def on_key_release(event):
+        global redraw
         key_pressed[event.keysym] = False
+        redraw = 0
 
     def move_camera(direction):
         step = 0.0001
+        global redraw
+        redraw = 1
         if direction == "w":
             frm.move_camera("forward")
         elif direction == "s":
@@ -259,9 +288,9 @@ def main():
             frm.rotate_camera("up_arrow")
         elif direction == "Down":
             frm.rotate_camera("down_arrow")
-        
         if key_pressed.get(direction):
             root.after(3, lambda: move_camera(direction))
+        gc.collect()  # Trigger garbage collection
 
     root.bind("<KeyPress>", on_key)
     root.bind("<KeyRelease>", on_key_release)
@@ -459,6 +488,8 @@ def main():
     new_object_entry = ttk.Entry(left_frame, font=("Calibri", 8))  # Set font to Consolas and increase font size
     new_object_entry.pack(side=tk.RIGHT, padx=5, pady=3, fill=tk.X, expand=True)  # Make the entry field fill the available space horizontally
     new_object_entry.insert(0, "NewObject")
+
+    gc.collect()
 
     root.bind("<Key>", on_key)
     return root.mainloop()
