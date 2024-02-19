@@ -10,7 +10,6 @@ import glob
 import gc
 
 # Some global configurations
-
 global_ver = "0.12"
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
@@ -490,6 +489,121 @@ def main():
     new_object_entry.insert(0, "NewObject")
 
     gc.collect()
+
+    def on_tree_right_click(event):
+        # Select item on right-click
+        item = tree.identify('item', event.x, event.y)
+        tree.selection_set(item)
+        # Display the context menu
+        context_menu.post(event.x_root, event.y_root)
+
+    def save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, file_path):
+        # Get the updated data from the entry fields
+        updated_vertices = vertices_entry.get()
+        updated_edges = edges_entry.get()
+        updated_colors = colors_entry.get()
+        updated_surfaces = surfaces_entry.get()
+        updated_image = image_entry.get()
+
+        # Write the updated data to the model file
+        with open(file_path, "w") as file:
+            file.write("[Kunity object]\n")
+            file.write(f"Vertices: {updated_vertices}\n")
+            file.write(f"Edges: {updated_edges}\n")
+            file.write(f"Colors: {updated_colors}\n")
+            file.write(f"Surfaces: {updated_surfaces}\n")
+            file.write(f"Image: {updated_image}\n")
+
+        print("Changes saved successfully!")
+
+    def show_model_options():
+        # Create a new Toplevel window for the model options
+        model_options_window = Toplevel(root)
+        model_options_window.title("Model Options")
+
+        model_options_window.resizable(False, False)  # Making the window unresizable
+
+        # Setting the window as a tool window
+        if os.name == 'nt':  # Check if the operating system is Windows
+            model_options_window.wm_attributes("-toolwindow", 1)
+
+        # Set the background color to dark grey
+        model_options_window.configure(bg="#484848")
+
+        # Retrieve the selected item from the tree view
+        selected_item = tree.selection()[0]
+        file_name = tree.item(selected_item, "text")
+        file_path = os.path.join("./scene/Assets/", file_name)
+
+        # Read data from the selected model file
+        with open(file_path, "r") as file:
+            model_data = file.readlines()
+
+        # Initialize variables to store model data
+        vertices = ""
+        edges = ""
+        colors = ""
+        surfaces = ""
+        image = ""
+
+        # Parse model data and extract vertices, edges, colors, surfaces, and image
+        for line in model_data:
+            if line.startswith("Vertices:"):
+                vertices = line.split(":")[1].strip()
+            elif line.startswith("Edges:"):
+                edges = line.split(":")[1].strip()
+            elif line.startswith("Colors:"):
+                colors = line.split(":")[1].strip()
+            elif line.startswith("Surfaces:"):
+                surfaces = line.split(":")[1].strip()
+            elif line.startswith("Image:"):
+                image = line.split(":")[1].strip()
+
+        # Add labels and entry fields for model options
+        vertices_label = ttk.Label(model_options_window, text="Vertices:")
+        vertices_label.grid(row=0, column=0, padx=6, sticky="w")
+        vertices_entry = ttk.Entry(model_options_window)
+        vertices_entry.grid(row=0, column=1, padx=5, pady=5)
+        vertices_entry.insert(0, vertices)  # Insert vertices data into entry field
+
+        edges_label = ttk.Label(model_options_window, text="Edges:")
+        edges_label.grid(row=1, column=0, padx=6, sticky="w")
+        edges_entry = ttk.Entry(model_options_window)
+        edges_entry.grid(row=1, column=1, padx=5, pady=5)
+        edges_entry.insert(0, edges)  # Insert edges data into entry field
+
+        colors_label = ttk.Label(model_options_window, text="Colors (RGB):")
+        colors_label.grid(row=2, column=0, padx=6, sticky="w")
+        colors_entry = ttk.Entry(model_options_window)
+        colors_entry.grid(row=2, column=1, padx=5, pady=5)
+        colors_entry.insert(0, colors)  # Insert colors data into entry field
+
+        surfaces_label = ttk.Label(model_options_window, text="Surfaces:")
+        surfaces_label.grid(row=3, column=0, padx=6, sticky="w")
+        surfaces_entry = ttk.Entry(model_options_window)
+        surfaces_entry.grid(row=3, column=1, padx=5, pady=5)
+        surfaces_entry.insert(0, surfaces)  # Insert surfaces data into entry field
+
+        image_label = ttk.Label(model_options_window, text="Image:")
+        image_label.grid(row=4, column=0, padx=6, sticky="w")
+        image_entry = ttk.Entry(model_options_window)
+        image_entry.grid(row=4, column=1, padx=5, pady=5)
+        image_entry.insert(0, image)  # Insert image path data into entry field
+
+        # Add a "Save" button to save changes
+        save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, file_path))
+        save_button.grid(row=5, columnspan=2, pady=10)
+
+    def option1_action():
+        print("Edit")
+        # Call the function to display model options pane
+        show_model_options()
+
+    # Create a context menu
+    context_menu = Menu(root, tearoff=0)
+    context_menu.add_command(label="Edit model...", command=option1_action)
+
+    tree.bind("<Button-3>", on_tree_right_click)  # Bind right-click event to the function
 
     root.bind("<Key>", on_key)
     return root.mainloop()
