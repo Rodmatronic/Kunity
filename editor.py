@@ -54,8 +54,6 @@ def populate_tree(tree, node, parent=""):
     else:
         tree.insert(parent, "end", text=os.path.basename(node))
 
-
-
 def compileandrun():
     logwrite("Play")
 
@@ -143,17 +141,17 @@ def draw_textured_quad(texture_id, vertices, surface):
     GL.glEnd()
 
 def renderXYdepth():
-
-    color = (3.0, 3.0, 3.0)
+    color = (global_scene_noshade_brightness)
 
     GL.glColor3fv(color)
     GL.glBegin(GL.GL_LINES)
-    for x in range(-5, 6):
-        GL.glVertex3f(x, -1, -5)
-        GL.glVertex3f(x, -1, 5)
-    for z in range(-5, 6):
-        GL.glVertex3f(-5, -1, z)
-        GL.glVertex3f(5, -1, z)
+    for x in range(-250, 251, 10):
+        GL.glVertex3f(x, -1, -250)
+        GL.glVertex3f(x, -1, 250)
+    for z in range(-250, 251, 10):
+        GL.glVertex3f(-250, -1, z)
+        GL.glVertex3f(250, -1, z)
+    
     GL.glEnd()
 
 def load_texture(texture_path):
@@ -194,7 +192,7 @@ class editorenv(OpenGLFrame):
     def redraw(self):
         GL.glLoadIdentity()
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
+        GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
         GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
         GL.glRotatef(self.view_angle_x, 1, 0, 0)
         GL.glRotatef(self.view_angle_y, 0, 1, 0)
@@ -340,7 +338,7 @@ def main():
     # Set dark mode theme
     style = ttk.Style()
     style.theme_use('clam')  # Use 'clam' theme as it's closer to dark mode
-    style.configure("TFrame", background="#333")
+    style.configure("TFrame", background="#222")
     style.configure(".", background="#484848", foreground="#ddd", bordercolor="000", font="Calibri")  # Default background and foreground colors
     style.configure("TEntry", foreground="White", background="#FFF", fieldbackground="#FFF", bordercolor="#222")  
 
@@ -404,9 +402,9 @@ def main():
     pause_image = Image.open("./images/icons/pause.png")
     stop_image = Image.open("./images/icons/stop.png")
 
-    play_image = play_image.resize((25, 25), Image.Resampling.LANCZOS)
-    pause_image = pause_image.resize((25, 25), Image.Resampling.LANCZOS)
-    stop_image = stop_image.resize((25, 25), Image.Resampling.LANCZOS)
+    play_image = play_image.resize((17, 17), Image.Resampling.LANCZOS)
+    pause_image = pause_image.resize((17, 17), Image.Resampling.LANCZOS)
+    stop_image = stop_image.resize((17, 17), Image.Resampling.LANCZOS)
 
     # Convert PIL images to Tkinter PhotoImage objects
     play_photo = ImageTk.PhotoImage(play_image)
@@ -419,15 +417,15 @@ def main():
     stop_button = ttk.Button(top_bar_frame, image=stop_photo, command=stopplay)
 
     # Pack buttons
-    play_button.pack(side=tk.LEFT, pady=3, padx=6)
-    pause_button.pack(side=tk.LEFT, pady=3, padx=6)
-    stop_button.pack(side=tk.LEFT, pady=3, padx=6)
+    play_button.pack(side=tk.LEFT, pady=5, padx=4)
+    pause_button.pack(side=tk.LEFT, pady=5, padx=4)
+    stop_button.pack(side=tk.LEFT, pady=5, padx=4)
 
     # Toolbar
     toolbar = ttk.Frame(root, relief="flat", height=20, style="Toolbar.TFrame")
     toolbar.pack(side=tk.TOP, fill=tk.X)
 
-    style.configure("Toolbar.TFrame", background="#222")
+    style.configure("Toolbar.TFrame", background="#333")
 
     paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
     left_frame = ttk.Frame(paned_window, relief="flat", width=400, height=500)
@@ -437,7 +435,7 @@ def main():
     paned_window.pack(fill=tk.BOTH, expand=True)
 
     # Add a label at the top of the left_frame
-    hierarchy_label = ttk.Label(toolbar, width=17, text="    Hierarchy", background="#484848", foreground="#FFFFFF")
+    hierarchy_label = ttk.Label(toolbar, width=12, text=" ⫤ Hierarchy", background="#484848", foreground="#FFFFFF")
     hierarchy_label.pack(padx=8, pady=0, side= TOP, anchor="w")
 
     # Create a Treeview widget
