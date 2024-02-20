@@ -19,7 +19,7 @@ iscompile = 0
 root = tk.Tk()
 root.geometry("1100x600")
 root.title("New Scene - " + "Kunity " + global_year + " " + global_ver + " (Python version " + platform.python_version() + ")")
-root.iconbitmap("logo.ico")
+# root.iconbitmap("logo.ico")
 
 try:
     os.remove("Kunity.logfile.txt") 
@@ -288,7 +288,7 @@ def main():
         top.configure(bg="#333")
         top.resizable(False, False)  # Making the window unresizable
         top.attributes('-topmost', True)
-        top.iconbitmap("logo.ico")
+        # top.iconbitmap("logo.ico")
 
         # Load the about image
         image = PhotoImage(file="./images/kunity.logo.png")
@@ -322,7 +322,7 @@ def main():
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
                 print("Created file:", object_name)
-                file.write("[Kunity object]\nVertices:\nEdges:\nColors:\nSurfaces:")
+                file.write("[Kunity object]\nVertices: 0.0 0.0 0.0\nEdges:\nColors:\nSurfaces:")
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
@@ -461,9 +461,9 @@ def main():
     create_button.pack(side=tk.RIGHT, padx=5, pady=3)
 
     # Add an entry field to enter the name of the new object
-    new_object_entry = ttk.Entry(left_frame, font=("Calibri", 8))  # Set font to Consolas and increase font size
-    new_object_entry.pack(side=tk.RIGHT, padx=5, pady=3, fill=tk.X, expand=True)  # Make the entry field fill the available space horizontally
-    new_object_entry.insert(0, "NewObject")
+    new_object_entry = ttk.Entry(left_frame, font=("Calibri", 10))  # Set font to Consolas and increase font size
+    new_object_entry.pack(side=tk.RIGHT, padx=0, pady=0, fill=tk.X, expand=True)  # Make the entry field fill the available space horizontally
+    new_object_entry.insert(0, "GameObject")
 
     gc.collect()
 
@@ -533,7 +533,7 @@ def main():
         model_options_window.resizable(False, False)  # Making the window unresizable
         model_options_window.attributes('-topmost', True)
         model_options_window.configure(bg="#484848")
-        model_options_window.iconbitmap("logo.ico")
+        # model_options_window.iconbitmap("logo.ico")
         # Retrieve the selected item from the tree view
         selected_item = tree.selection()[0]
         file_name = tree.item(selected_item, "text")
