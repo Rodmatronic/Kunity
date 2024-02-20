@@ -6,3 +6,10 @@ The game engine includes:
 - A fancy play button!
 
 if you want to help the development ring up @Rodmatronic
+
+TODO:
+- code editor -V
+           python api layer to the engines functions
+- obj mesh support 
+- settings
+- shadercode support
