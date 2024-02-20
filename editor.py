@@ -8,23 +8,17 @@ from OpenGL import GL, GLU
 import os
 import glob
 import gc
+import platform
 
 # Some global configurations
-global_ver = "0.12"
+global_ver = "0.14"
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
-redraw = 0
-
-# The default object
-verticies = ((1, -1, -1), (1, 1, -1), (-1, 1, -1), (-1, -1, -1),
-             (1, -1, 1), (1, 1, 1), (-1, -1, 1), (-1, 1, 1))
-
-edges = ((0, 1), (0, 3), (0, 4), (2, 1), (2, 3), (2, 7),
-         (6, 3), (6, 4), (6, 7), (5, 1), (5, 4), (5, 7))
+iscompile = 0
 
 root = tk.Tk()
 root.geometry("1100x600")
-root.title("New Scene - " + "Kunity " + global_year + " " + global_ver)
+root.title("New Scene - " + "Kunity " + global_year + " " + global_ver + " (Python version " + platform.python_version() + ")")
 root.iconbitmap("logo.ico")
 
 try:
@@ -56,16 +50,23 @@ def populate_tree(tree, node, parent=""):
         tree.insert(parent, "end", text=os.path.basename(node))
 
 def compileandrun():
+    global iscompile
+    iscompile = 1
     logwrite("Play")
 
 def stopplay():
+    global iscompile
+    iscompile = 0
     logwrite("Stop")
 
 def RenderAll():
     # Find all .kasset files in the specified directory
     asset_files = glob.glob("./scene/Assets/*.kasset")
     
-    renderXYdepth()
+    if iscompile == 0:
+        {
+            renderXYdepth()
+        }
 
     # Iterate over each .kasset file
     for asset_file in asset_files:
@@ -155,11 +156,11 @@ def renderXYdepth():
     GL.glColor3fv(color)
     GL.glBegin(GL.GL_LINES)
     for x in range(-250, 251, 10):
-        GL.glVertex3f(x, -1, -250)
-        GL.glVertex3f(x, -1, 250)
+        GL.glVertex3f(x, 0, -250)
+        GL.glVertex3f(x, 0, 250)
     for z in range(-250, 251, 10):
-        GL.glVertex3f(-250, -1, z)
-        GL.glVertex3f(250, -1, z)
+        GL.glVertex3f(-250, 0, z)
+        GL.glVertex3f(250, 0, z)
     
     GL.glEnd()
 
@@ -186,8 +187,6 @@ def load_texture(texture_path):
 
 class editorenv(OpenGLFrame):
     def initgl(self):
-        global redraw  # Access the global scene_dirt variable
-        redraw = 0
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(0.0, 0.0, -5)
@@ -200,30 +199,18 @@ class editorenv(OpenGLFrame):
         self.view_angle_y = 0.0
 
     def redraw(self):
-        global redraw
-        if redraw == 1:
-            GL.glLoadIdentity()
-            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-            GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
-            GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
-            GL.glRotatef(self.view_angle_x, 1, 0, 0)
-            GL.glRotatef(self.view_angle_y, 0, 1, 0)
-            RenderAll()
-            redraw = 0
-            gc.collect()
-        else:
-            GL.glLoadIdentity()
-            GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
-            GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
-            GL.glRotatef(self.view_angle_x, 1, 0, 0)
-            GL.glRotatef(self.view_angle_y, 0, 1, 0)
-            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-            RenderAll()
-            redraw = 0
-            gc.collect()
+        GL.glLoadIdentity()
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+        GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
+        GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
+        GL.glRotatef(self.view_angle_x, 1, 0, 0)
+        GL.glRotatef(self.view_angle_y, 0, 1, 0)
+        RenderAll()
+        gc.collect()
+
 
     def move_camera(self, direction):
-        step = 0.1
+        step = 0.2
         if direction == "up":
             self.camera_y -= step
         elif direction == "down":
@@ -254,8 +241,6 @@ class editorenv(OpenGLFrame):
 
 def main():
     key_pressed = {}
-    global redraw
-    redraw = 0
 
     def on_key(event):
         if event.keysym not in key_pressed or not key_pressed[event.keysym]:
@@ -263,33 +248,31 @@ def main():
             move_camera(event.keysym)
 
     def on_key_release(event):
-        global redraw
         key_pressed[event.keysym] = False
-        redraw = 0
 
     def move_camera(direction):
-        step = 0.0001
-        global redraw
-        redraw = 1
-        if direction == "w":
-            frm.move_camera("forward")
-        elif direction == "s":
-            frm.move_camera("backward")
-        elif direction == "a":
-            frm.move_camera("sideways_right")
-        elif direction == "d":
-            frm.move_camera("sideways_left")
-        elif direction == "Right":
-            frm.rotate_camera("left_arrow")
-        elif direction == "Left":
-            frm.rotate_camera("right_arrow")
-        elif direction == "Up":
-            frm.rotate_camera("up_arrow")
-        elif direction == "Down":
-            frm.rotate_camera("down_arrow")
-        if key_pressed.get(direction):
-            root.after(3, lambda: move_camera(direction))
-        gc.collect()  # Trigger garbage collection
+        if iscompile == 0:
+            step = 0.01
+            if direction == "w":
+                frm.move_camera("forward")
+            elif direction == "s":
+                frm.move_camera("backward")
+            elif direction == "a":
+                frm.move_camera("sideways_right")
+            elif direction == "d":
+                frm.move_camera("sideways_left")
+            elif direction == "Right":
+                frm.rotate_camera("left_arrow")
+            elif direction == "Left":
+                frm.rotate_camera("right_arrow")
+            elif direction == "Up":
+                frm.rotate_camera("up_arrow")
+            elif direction == "Down":
+                frm.rotate_camera("down_arrow")
+            if key_pressed.get(direction):
+                root.after(5, lambda: move_camera(direction))
+            gc.collect()  # Trigger garbage collection
+            
 
     root.bind("<KeyPress>", on_key)
     root.bind("<KeyRelease>", on_key_release)
@@ -304,10 +287,8 @@ def main():
         top.title("About Kunity")
         top.configure(bg="#333")
         top.resizable(False, False)  # Making the window unresizable
-
-        # Setting the window as a tool window
-        if os.name == 'nt':  # Check if the operating system is Windows
-            top.wm_attributes("-toolwindow", 1)
+        top.attributes('-topmost', True)
+        top.iconbitmap("logo.ico")
 
         # Load the about image
         image = PhotoImage(file="./images/kunity.logo.png")
@@ -329,8 +310,7 @@ def main():
 
         Label(top, text="Powered by:", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=42, y=180)
 
-
-        Label(top, text="Ver " + global_ver + " " + global_year, bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=145)
+        Label(top, text="Ver " + global_ver + " " + global_year + ", python version " + platform.python_version(), bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=145)
 
     def create_kasset():
         # Get the name of the new object
@@ -402,9 +382,6 @@ def main():
     editmenu.add_command(label="Paste", command=donothing)
     editmenu.add_separator()
     editmenu.add_command(label="Rename", command=donothing)
-
-    preferencesmenu = Menu(menubar, tearoff=0)
-    menubar.add_cascade(label="Preferences", menu=preferencesmenu)
 
     windowmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Window", menu=windowmenu)
@@ -497,13 +474,29 @@ def main():
         # Display the context menu
         context_menu.post(event.x_root, event.y_root)
 
-    def save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, file_path):
+    def save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path):
         # Get the updated data from the entry fields
         updated_vertices = vertices_entry.get()
         updated_edges = edges_entry.get()
         updated_colors = colors_entry.get()
         updated_surfaces = surfaces_entry.get()
         updated_image = image_entry.get()
+        position = position_entry.get().split()  # Split the position input into X, Y, Z components
+
+        # Check if the position input is valid
+        if len(position) != 3:
+            print("Invalid position input. Please enter three values separated by spaces for X, Y, and Z.")
+            return
+
+        try:
+            # Attempt to convert position components to float
+            position = [float(coord) for coord in position]
+        except ValueError:
+            print("Invalid position input. Please enter numeric values for X, Y, and Z.")
+            return
+
+        # Apply the position changes to the vertices
+        updated_vertices = set_vertices_to_position(updated_vertices, position)
 
         # Write the updated data to the model file
         with open(file_path, "w") as file:
@@ -516,24 +509,37 @@ def main():
 
         print("Changes saved successfully!")
 
+    def set_vertices_to_position(vertices_str, position):
+        # Split the vertices string into individual vertices
+        vertices = vertices_str.split(",")
+        updated_vertices = []
+
+        # Loop through each vertex and set it to the specified position
+        for vertex in vertices:
+            # Remove any trailing or leading whitespace
+            vertex = vertex.strip()
+            x, y, z = map(float, vertex.split())
+            x += position[0]  # Add the X component of the position
+            y += position[1]  # Add the Y component of the position
+            z += position[2]  # Add the Z component of the position
+            updated_vertices.append(f"{x} {y} {z}")
+
+        # Join the updated vertices into a single string
+        return ", ".join(updated_vertices)
+
     def show_model_options():
         # Create a new Toplevel window for the model options
         model_options_window = Toplevel(root)
-        model_options_window.title("Model Options")
-
         model_options_window.resizable(False, False)  # Making the window unresizable
-
-        # Setting the window as a tool window
-        if os.name == 'nt':  # Check if the operating system is Windows
-            model_options_window.wm_attributes("-toolwindow", 1)
-
-        # Set the background color to dark grey
+        model_options_window.attributes('-topmost', True)
         model_options_window.configure(bg="#484848")
-
+        model_options_window.iconbitmap("logo.ico")
         # Retrieve the selected item from the tree view
         selected_item = tree.selection()[0]
         file_name = tree.item(selected_item, "text")
         file_path = os.path.join("./scene/Assets/", file_name)
+
+        model_options_window.title("'" + file_name + "' Options")
 
         # Read data from the selected model file
         with open(file_path, "r") as file:
@@ -559,12 +565,33 @@ def main():
             elif line.startswith("Image:"):
                 image = line.split(":")[1].strip()
 
+        # Calculate the average of X, Y, and Z coordinates for all vertices
+        total_x, total_y, total_z = 0, 0, 0
+        num_vertices = 0
+        for vertex in vertices.split(","):
+            x, y, z = map(float, vertex.strip().split())
+            total_x += x
+            total_y += y
+            total_z += z
+            num_vertices += 1
+
+        avg_x = total_x / num_vertices
+        avg_y = total_y / num_vertices
+        avg_z = total_z / num_vertices
+
         # Add labels and entry fields for model options
         vertices_label = ttk.Label(model_options_window, text="Vertices:")
         vertices_label.grid(row=0, column=0, padx=6, sticky="w")
         vertices_entry = ttk.Entry(model_options_window)
         vertices_entry.grid(row=0, column=1, padx=5, pady=5)
         vertices_entry.insert(0, vertices)  # Insert vertices data into entry field
+
+        # Add a label and entry field for the position
+        position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
+        position_label.grid(row=5, column=0, padx=6, sticky="w")
+        position_entry = ttk.Entry(model_options_window)
+        position_entry.grid(row=5, column=1, padx=5, pady=5)
+        position_entry.insert(0, f"{avg_x} {avg_y} {avg_z}")  # Insert average position data into entry field
 
         edges_label = ttk.Label(model_options_window, text="Edges:")
         edges_label.grid(row=1, column=0, padx=6, sticky="w")
@@ -591,8 +618,27 @@ def main():
         image_entry.insert(0, image)  # Insert image path data into entry field
 
         # Add a "Save" button to save changes
-        save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, file_path))
-        save_button.grid(row=5, columnspan=2, pady=10)
+        save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
+        save_button.grid(row=6, columnspan=2, pady=10)
+
+    def calculate_average_xyz(vertices_str):
+        vertices = vertices_str.split(",")
+        total_x, total_y, total_z = 0, 0, 0
+        num_vertices = len(vertices)
+
+        # Calculate the total X, Y, and Z coordinates
+        for vertex in vertices:
+            x, y, z = map(float, vertex.strip().split())
+            total_x += x
+            total_y += y
+            total_z += z
+
+        # Calculate the average X, Y, and Z coordinates
+        average_x = total_x / num_vertices
+        average_y = total_y / num_vertices
+        average_z = total_z / num_vertices
+
+        return average_x, average_y, average_z
 
     def option1_action():
         print("Edit")
