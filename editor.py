@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.filedialog as filedialog
 from tkinter import ttk
 from tkinter import *
+from tkinter import messagebox 
 from PIL import Image, ImageTk
 from pyopengltk import OpenGLFrame
 from OpenGL import GL, GLU
@@ -9,13 +10,18 @@ import os
 import glob
 import gc
 import platform
-
+cameralist = []
 # Some global configurations
 global_ver = "0.14"
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
+global campos
+global camrot
+global camid
 iscompile = 0
-
+#campos = None
+#camrot = None 
+#camid = None
 root = tk.Tk()
 root.geometry("1100x600")
 root.title("New Scene - " + "Kunity " + global_year + " " + global_ver + " (Python version " + platform.python_version() + ")")
@@ -50,9 +56,32 @@ def populate_tree(tree, node, parent=""):
         tree.insert(parent, "end", text=os.path.basename(node))
 
 def compileandrun():
+    global campos
+    global frm
+    global camrot
+    global camid
     global iscompile
     iscompile = 1
     logwrite("Play")
+    try:
+        print(campos)
+        print(camrot)
+        print(camid)
+        #GL.glLoadIdentity()
+        #GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+        #GL.glTranslatef(campos[0],campos[1],campos[2])
+        #RenderAll()
+        #gc.collect()
+        frm.setpos(campos[0],campos[1],campos[2],camrot[0],camrot[1])
+        
+            
+    
+         
+    except OSError as err:
+        logwrite(err)
+        messagebox.showinfo("showerror", "No Valid Camera in Scene") 
+        logwrite("error(!):No Valid Camera in Scene")
+        logwrite("warn(W):Non-Fatal exception caught ")
 
 def stopplay():
     global iscompile
@@ -60,6 +89,7 @@ def stopplay():
     logwrite("Stop")
 
 def RenderAll():
+   
     # Find all .kasset files in the specified directory
     asset_files = glob.glob("./scene/Assets/*.kasset")
     
@@ -76,7 +106,12 @@ def RenderAll():
         face_colors = []  # Separate list for face colors
         surfaces = []
         image_path = None  # Initialize image path variable
-
+        pos = []
+        rot = []
+        global camid
+        global campos
+        global camrot
+        iscam = False
         # Read data from the asset file
         with open(asset_file, "r") as file:
             for line in file:
@@ -94,30 +129,49 @@ def RenderAll():
                     surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
                 elif line.startswith("Image:"):  # Check for image path flag
                     image_path = line.split(":")[1].strip()  # Extract image path
-
+                elif line.startswith("pos:"):
+                    pos_data = line.split(":")[1].strip().split(",")
+                    pos = [tuple(map(float, poss.split())) for poss in pos_data]
+                elif line.startswith("rot:"):
+                    rot_data = line.split(":")[1].strip().split(",")
+                    rot = [tuple(map(float, rots.split())) for rots in rot_data]
+                elif line.startswith("id:"):
+                    camid = line.split(":")[1].strip()
         # Check if all necessary data has been read
         if not vertices or not edges:
-            logwrite(f"Incomplete data in the asset file: {asset_file}")
-            continue  # Move to the next asset file
-        
+            if not rot or not pos or not camid:
+                logwrite(f"Incomplete data in the asset file: {asset_file}")
+                continue  # Move to the next asset file
+            else:
+                #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
+                iscam = True
+                campos = pos[0]
+                camrot = rot[0]
+                camid = camid
+                
+                
         # If image path is specified, draw textured quads
-        if image_path:
+        if image_path and iscam == False:
             # Load the texture
             texture_id = load_texture(image_path)
             # Draw textured quad for each surface
             for surface in surfaces:
                 draw_textured_quad(texture_id, vertices, surface)
         else:
-            GL.glBegin(GL.GL_QUADS)
-            for surface, color in zip(surfaces, face_colors): 
-                for vertex in surface:
-                    GL.glColor3fv(color)
-                    if vertex < len(vertices):
-                        GL.glVertex3fv(vertices[vertex])
-                    else:
-                        print(f"Index {vertex} is out of range for vertices list with length {len(vertices)}")
-            
-            GL.glEnd()
+            if iscam == False:
+                GL.glBegin(GL.GL_QUADS)
+                for surface, color in zip(surfaces, face_colors): 
+                    for vertex in surface:
+                        GL.glColor3fv(color)
+                        if vertex < len(vertices):
+                            GL.glVertex3fv(vertices[vertex])
+                        else:
+                            print(f"Index {vertex} is out of range for vertices list with length {len(vertices)}")
+                
+                GL.glEnd()
+            else:
+                #do nothing
+                pass
 
 def draw_textured_quad(texture_id, vertices, surface):
     # Convert texture_id to integer if necessary
@@ -208,7 +262,13 @@ class editorenv(OpenGLFrame):
         RenderAll()
         gc.collect()
 
-
+    def setpos(self, x, y, z, xrot, yrot):
+        self.camera_x = x
+        self.camera_y = y
+        self.camera_z = z
+        self.view_angle_x = xrot
+        self.view_angle_y = yrot
+       
     def move_camera(self, direction):
         step = 0.2
         if direction == "up":
@@ -252,7 +312,7 @@ def main():
 
     def move_camera(direction):
         if iscompile == 0:
-            step = 0.01
+            step = 0.01 #never used, will keep it. @Rodmatronic you can keep or remove as you see fit
             if direction == "w":
                 frm.move_camera("forward")
             elif direction == "s":
@@ -282,7 +342,7 @@ def main():
 
     def open_about():
         logwrite("About menu open")
-        top = Toplevel(root)
+        top = Toplevel(root) #undefined * import tk
         top.geometry("550x450")
         top.title("About Kunity")
         top.configure(bg="#333")
@@ -311,9 +371,7 @@ def main():
         Label(top, text="Powered by:", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=42, y=180)
 
         Label(top, text="Ver " + global_ver + " " + global_year + ", python version " + platform.python_version(), bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=145)
-
-    def create_kasset():
-        # Get the name of the new object
+    def create_camera(camid):#creates camera with id (so you can have more than one camera)
         object_name = new_object_entry.get()
 
         # Check if the name is not empty
@@ -322,10 +380,27 @@ def main():
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
                 print("Created file:", object_name)
-                file.write("[Kunity object]\nVertices: 0.0 0.0 0.0\nEdges:\nColors:\nSurfaces:")
+                
+                file.write(str("[Kunity camera]\npos: 0.0 0.0 0.0\nrot: 0.0 0.0 0.0\nid: "+str(camid)))#creates a new camera instance file @ 0,0,0 with no rotation
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+    def create_kasset():
+        # Get the name of the new object
+        object_name = new_object_entry.get()
+        if object_name == "camera":
+            create_camera("1")
+        else:
+            # Check if the name is not empty
+            print("Attempting to create file:", object_name)
+            if object_name:
+                # Create a new file with the given name and the ".kasset" extension
+                with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
+                    print("Created file:", object_name)
+                    file.write("[Kunity object]\nVertices: 0.0 0.0 0.0\nEdges:\nColors:\nSurfaces:")
+                # Refresh the file view
+                tree.delete(*tree.get_children())
+                populate_tree(tree, "./scene")
 
     def delete_selected():
         # Get selected items from the Treeview
@@ -451,7 +526,7 @@ def main():
     # Add a "Delete" button next to the Treeview
     delete_button = ttk.Button(left_frame, text="Delete", command=delete_selected)
     delete_button.pack(side=tk.LEFT, padx=5, pady=3)
-
+    global frm
     frm = editorenv(master=editor, height=600, width=400)
     frm.animate = 10
     frm.pack(fill=tk.BOTH, expand=True)
