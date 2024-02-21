@@ -410,7 +410,7 @@ def main():
             with open(f"./scene/Assets/scripts/{object_name}.py", "w") as file:
                 print("note(N): Created file:", object_name)
                 
-                file.write(str('def start():\n  print("Hello, World!")'))
+                file.write(str('def start():\n  print("Hello, World!")'))#add code editor to edit window :3
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
@@ -745,6 +745,9 @@ def main():
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity soundsrc]":
                 logwrite("note(N): Edit type: Sound")
+            elif first_line == "#[Kunity script]":
+                logwrite("note(N): Edit type: Script")
+                #do some crap here to edit
             else:
                 logwrite("note(N): Edit type: Normal/model")
                 # Initialize variables to store model data
