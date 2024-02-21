@@ -25,7 +25,7 @@ global campos
 global camrot
 global camid
 iscompile = 0
-camcount = 2 # 1 should be reserved
+camcount = 2 #NOTE: 1 should be reserved
 #campos = None
 #camrot = None 
 #camid = None
@@ -134,7 +134,7 @@ def stopplay():
     iscompile = 0
     logwrite("Stop")
     frm.setpos(camerax,cameray,cameraz,camerarotx,cameraroty)
-
+    #TODO make it also set camera back when window changed
 def RenderAll():
    
     # Find all .kasset files in the specified directory
@@ -685,7 +685,7 @@ def main():
     global cameraroty
     frm = editorenv(master=editor, height=600, width=400)
     frm.animate = 10
-    #frm.setpos(camerax,cameray,cameraz,camerarotx,cameraroty)
+    #frm.setpos(camerax,cameray,cameraz,camerarotx,cameraroty) #uncommenting this causes pil to freak out **restart required**
     frm.pack(fill=tk.BOTH, expand=True)
 
     # Add a "+" button to create a new ".kasset" object
@@ -844,7 +844,7 @@ def main():
                 path_entry.insert(0, path)
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
-                #do some crap here to edit
+                #TODO: make a second tab for script editing
             else:
                 logwrite("note(N): Edit type: Normal/model")
                 # Initialize variables to store model data
@@ -919,7 +919,7 @@ def main():
                 image_entry.grid(row=4, column=1, padx=5, pady=5)
                 image_entry.insert(0, image)  # Insert image path data into entry field
 
-                # Add a "Save" button to save changes
+                #TODO: Add a "Save" button to save changes
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
     
