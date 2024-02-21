@@ -86,7 +86,8 @@ def compileShader(source, shaderType):
             shaderType,
         )
     return shader
-
+vertex_shader = """""" #TODO: make a gui to open .vert glsl source
+fragment_shader = """"""#TODO: make a gui to open .frag glsl source
 logwrite("KUNITY logfile --- \\/\n---------------------")
 
 def populate_tree(tree, node, parent=""):
@@ -254,7 +255,8 @@ def draw_textured_quad(texture_id, vertices, surface):
     # End drawing quads
     GL.glEnd()
     GL.glDeleteTextures(texture_id)
-
+def bytestr(s):
+    return s.encode("utf-8") + b"\000"
 def renderXYdepth():
     color = (global_scene_noshade_brightness)
 
