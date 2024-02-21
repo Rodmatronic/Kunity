@@ -298,6 +298,7 @@ class editorenv(OpenGLFrame):
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(0.0, 0.0, -5)
+        GL.glClearColor(0.4, 0.5, 1.0, 1.0)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
         self.camera_x = 0.0
@@ -491,7 +492,90 @@ def main():
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+    def create_vert_glsl():
+        object_name = new_object_entry.get()
 
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".vert" extension
+            with open(f"./scene/Assets/shaders/{object_name}.vert", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_frag_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".frag" extension
+            with open(f"./scene/Assets/shaders/{object_name}.frag", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_geom_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".geom" extension
+            with open(f"./scene/Assets/shaders/{object_name}.geom", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_tesc_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".tesc" extension
+            with open(f"./scene/Assets/shaders/{object_name}.tesc", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_tese_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".tese" extension
+            with open(f"./scene/Assets/shaders/{object_name}.tese", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_comp_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".comp" extension
+            with open(f"./scene/Assets/shaders/{object_name}.comp", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".glsl" extension
+            with open(f"./scene/Assets/shaders/{object_name}.glsl", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
     def create_kasset_menu():
         # Create a new Toplevel window for the model options
         asset_selector_window = Toplevel(root)
@@ -516,7 +600,8 @@ def main():
         src_button.grid(row=3, columnspan=1, pady=2, sticky=W)
 
         script_button = ttk.Button(asset_selector_window, text="🐍 Script", command=lambda: [create_kasset("script"), asset_selector_window.destroy()])
-        script_button.grid(row=4, columnspan=1, pady=2, sticky=W)
+        script_button.grid(row=4, columnspan=1, pady=2, sticky=W)#TODO: add glsl entry and when pressed make it open a submenu with all shadertypes
+        
 
     def create_kasset(type):
         object_name = new_object_entry.get()
@@ -527,6 +612,21 @@ def main():
             create_soundsrc()
         elif type == "script":
             create_script()
+        elif type == "vert_glsl": #vertex glsl shader
+            pass
+        elif type == "frag_glsl": #fragment glsl shader
+            pass
+        elif type == "geom_glsl": #geometry glsl shader
+            pass
+        elif type == "tesc_glsl": #tessellation control glsl shader
+            pass
+        elif type == "tese_glsl": #tessellation eval glsl shader
+            pass
+        elif type == "comp_glsl": #compute glsl shader
+            pass
+        elif type == "glsl": #plain old glsl shader
+            pass
+        
         elif type == "model":
             # Check if the name is not empty
             logwrite("note(N): Attempting to create file:"+ object_name)
