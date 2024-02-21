@@ -10,6 +10,7 @@ import os
 import glob
 import gc
 import platform
+import shutil
 
 cameralist = []
 # Some global configurations
@@ -402,6 +403,21 @@ def main():
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
 
+    def create_script():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".kasset" extension
+            with open(f"./scene/Assets/scripts/{object_name}.py", "w") as file:
+                print("Created file:", object_name)
+                
+                file.write(str('def start():\n  print("Hello, World!")'))
+            # Refresh the file view
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+
     def create_kasset_menu():
         # Create a new Toplevel window for the model options
         asset_selector_window = Toplevel(root)
@@ -425,6 +441,9 @@ def main():
         src_button = ttk.Button(asset_selector_window, text="🔈Sound source", command=lambda: [create_kasset("soundsrc"), asset_selector_window.destroy()])
         src_button.grid(row=3, columnspan=1, pady=2, sticky=W)
 
+        script_button = ttk.Button(asset_selector_window, text="🐍 Script", command=lambda: [create_kasset("script"), asset_selector_window.destroy()])
+        script_button.grid(row=4, columnspan=1, pady=2, sticky=W)
+
     def create_kasset(type):
         object_name = new_object_entry.get()
 
@@ -432,6 +451,8 @@ def main():
             create_camera(camcount+1)
         elif type == "soundsrc":
             create_soundsrc()
+        elif type == "script":
+            create_script()
         elif type == "model":
             # Check if the name is not empty
             print("Attempting to create file:", object_name)
@@ -458,7 +479,23 @@ def main():
                 tree.delete(item)
                 print("File deleted successfully.")
             except FileNotFoundError:
-                print("File not found:", file_path)
+                try:
+                    file_path = os.path.join("./scene/Assets/scripts/", file_name)
+                    # Remove the file from the file system
+                    os.remove(file_path)
+                    # Delete the item from the Treeview
+                    tree.delete(item)
+                    print("File deleted successfully.")
+                except FileNotFoundError:
+                    try:
+                        file_path = os.path.join("./scene/Assets/materials/", file_name)
+                        # Remove the file from the file system
+                        os.remove(file_path)
+                        # Delete the item from the Treeview
+                        tree.delete(item)
+                        print("File deleted successfully.")
+                    except FileNotFoundError:
+                        print("File not found:", file_path)
 
     # Set dark mode theme
     style = ttk.Style()
@@ -485,8 +522,8 @@ def main():
     filemenu.add_command(label="Save", command=donothing)
     filemenu.add_command(label="Save as...", command=donothing)
     filemenu.add_separator()
+    filemenu.add_command(label="Restart", command=main)
     filemenu.add_command(label="Exit", command=safe_exit)
-
     menubar.add_cascade(label="File", menu=filemenu)
 
     editmenu = Menu(menubar, tearoff=0)
