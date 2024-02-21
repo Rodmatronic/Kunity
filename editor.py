@@ -86,8 +86,24 @@ def compileShader(source, shaderType):
             shaderType,
         )
     return shader
-vertex_shader = """""" #TODO: make a gui to open .vert glsl source
-fragment_shader = """"""#TODO: make a gui to open .frag glsl source
+vertex_shader = """#version 130 
+in vec3 position;
+varying vec3 vertex_color;
+uniform mat3 proj;
+void main()
+{
+   gl_Position = vec4( proj*position, 1.0);
+   gl_PointSize = 4./(0.5 + length( position ));
+   vertex_color = vec3( position.x/2+.5, position.y/2+.5, position.z/2+.5);
+}""" #TODO: make a gui to open .vert glsl source
+fragment_shader = """#version 130
+varying vec3 vertex_color;
+void main()
+{
+ 
+   gl_FragColor = vec4(vertex_color,0.25f);
+   
+}"""#TODO: make a gui to open .frag glsl source
 logwrite("KUNITY logfile --- \\/\n---------------------")
 
 def populate_tree(tree, node, parent=""):
@@ -300,7 +316,13 @@ class editorenv(OpenGLFrame):
         GL.glTranslatef(0.0, 0.0, -5)
         GL.glClearColor(0.4, 0.5, 1.0, 1.0)
         GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_PROGRAM_POINT_SIZE)
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
+        if not hasattr(self, "shader"):
+           self.shader = OpenGL.GL.shaders.compileProgram(
+               compileShader(vertex_shader, GL.GL_VERTEX_SHADER),
+               compileShader(fragment_shader, GL.GL_FRAGMENT_SHADER)
+               )
         self.camera_x = 0.0
         self.camera_y = 0.0
         self.camera_z = -5.0
