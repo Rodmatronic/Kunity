@@ -10,6 +10,7 @@ import os
 import glob
 import gc
 import platform
+
 cameralist = []
 # Some global configurations
 global_ver = "0.14"
@@ -73,10 +74,6 @@ def compileandrun():
         #RenderAll()
         #gc.collect()
         frm.setpos(campos[0],campos[1],campos[2],camrot[0],camrot[1])
-        
-            
-    
-         
     except OSError as err:
         logwrite(err)
         messagebox.showinfo("showerror", "No Valid Camera in Scene") 
@@ -584,6 +581,18 @@ def main():
 
         print("Changes saved successfully!")
 
+    def save_camera_changes(position_entry, rotation_entry, id_entry, file_path):
+        updated_position = position_entry.get()
+        updated_rotation = rotation_entry.get()
+        updated_id = id_entry.get()
+
+        with open(file_path, "w") as file:
+            file.write("[Kunity camera]\n")
+            file.write(f"pos: {updated_position}\n")
+            file.write(f"rot: {updated_rotation}\n")
+            file.write(f"id: {updated_id}\n")
+        print("Changes saved successfully!")
+
     def set_vertices_to_position(vertices_str, position):
         # Split the vertices string into individual vertices
         vertices = vertices_str.split(",")
@@ -619,105 +628,122 @@ def main():
         # Read data from the selected model file
         with open(file_path, "r") as file:
             model_data = file.readlines()
+            first_line = model_data[0].strip()
+            if first_line == "[Kunity camera]":
+                print("Edit type: Camera")
+                pos = ""
+                rot = ""
+                id = ""
 
-        # Initialize variables to store model data
-        vertices = ""
-        edges = ""
-        colors = ""
-        surfaces = ""
-        image = ""
+                for line in model_data:
+                    if line.startswith("pos:"):
+                        pos = line.split(":")[1].strip()
+                    elif line.startswith("rot:"):
+                        rot = line.split(":")[1].strip()
+                    elif line.startswith("id:"):
+                        id = line.split(":")[1].strip()
 
-        # Parse model data and extract vertices, edges, colors, surfaces, and image
-        for line in model_data:
-            if line.startswith("Vertices:"):
-                vertices = line.split(":")[1].strip()
-            elif line.startswith("Edges:"):
-                edges = line.split(":")[1].strip()
-            elif line.startswith("Colors:"):
-                colors = line.split(":")[1].strip()
-            elif line.startswith("Surfaces:"):
-                surfaces = line.split(":")[1].strip()
-            elif line.startswith("Image:"):
-                image = line.split(":")[1].strip()
+                rotation_label = ttk.Label(model_options_window, text="Rotation (X Y Z):")
+                rotation_label.grid(row=1, column=0, padx=6, sticky="w")
+                rotation_entry = ttk.Entry(model_options_window)
+                rotation_entry.grid(row=1, column=1, padx=5, pady=5)
+                rotation_entry.insert(0, rot)
 
-        # Calculate the average of X, Y, and Z coordinates for all vertices
-        total_x, total_y, total_z = 0, 0, 0
-        num_vertices = 0
-        for vertex in vertices.split(","):
-            x, y, z = map(float, vertex.strip().split())
-            total_x += x
-            total_y += y
-            total_z += z
-            num_vertices += 1
+                position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
+                position_label.grid(row=5, column=0, padx=6, sticky="w")
+                position_entry = ttk.Entry(model_options_window)
+                position_entry.grid(row=5, column=1, padx=5, pady=5)
+                position_entry.insert(0, f"{pos}")
 
-        avg_x = total_x / num_vertices
-        avg_y = total_y / num_vertices
-        avg_z = total_z / num_vertices
+                id_label = ttk.Label(model_options_window, text="Camera ID:")
+                id_label.grid(row=2, column=0, padx=6, sticky="w")
+                id_entry = ttk.Entry(model_options_window)
+                id_entry.grid(row=2, column=1, padx=5, pady=5)
+                id_entry.insert(0, id)
 
-        # Add labels and entry fields for model options
-        vertices_label = ttk.Label(model_options_window, text="Vertices:")
-        vertices_label.grid(row=0, column=0, padx=6, sticky="w")
-        vertices_entry = ttk.Entry(model_options_window)
-        vertices_entry.grid(row=0, column=1, padx=5, pady=5)
-        vertices_entry.insert(0, vertices)  # Insert vertices data into entry field
+                # Add a "Save" button to save changes
+                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_camera_changes(position_entry, rotation_entry, id_entry, file_path))
+                save_button.grid(row=6, columnspan=2, pady=10)
 
-        # Add a label and entry field for the position
-        position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
-        position_label.grid(row=5, column=0, padx=6, sticky="w")
-        position_entry = ttk.Entry(model_options_window)
-        position_entry.grid(row=5, column=1, padx=5, pady=5)
-        position_entry.insert(0, f"{avg_x} {avg_y} {avg_z}")  # Insert average position data into entry field
+            else:
+                print("Edit type: Normal/model")
+                # Initialize variables to store model data
+                vertices = ""
+                edges = ""
+                colors = ""
+                surfaces = ""
+                image = ""
 
-        edges_label = ttk.Label(model_options_window, text="Edges:")
-        edges_label.grid(row=1, column=0, padx=6, sticky="w")
-        edges_entry = ttk.Entry(model_options_window)
-        edges_entry.grid(row=1, column=1, padx=5, pady=5)
-        edges_entry.insert(0, edges)  # Insert edges data into entry field
+                # Parse model data and extract vertices, edges, colors, surfaces, and image
+                for line in model_data:
+                    if line.startswith("Vertices:"):
+                        vertices = line.split(":")[1].strip()
+                    elif line.startswith("Edges:"):
+                        edges = line.split(":")[1].strip()
+                    elif line.startswith("Colors:"):
+                        colors = line.split(":")[1].strip()
+                    elif line.startswith("Surfaces:"):
+                        surfaces = line.split(":")[1].strip()
+                    elif line.startswith("Image:"):
+                        image = line.split(":")[1].strip()
 
-        colors_label = ttk.Label(model_options_window, text="Colors (RGB):")
-        colors_label.grid(row=2, column=0, padx=6, sticky="w")
-        colors_entry = ttk.Entry(model_options_window)
-        colors_entry.grid(row=2, column=1, padx=5, pady=5)
-        colors_entry.insert(0, colors)  # Insert colors data into entry field
+                # Calculate the average of X, Y, and Z coordinates for all vertices
+                total_x, total_y, total_z = 0, 0, 0
+                num_vertices = 0
+                for vertex in vertices.split(","):
+                    x, y, z = map(float, vertex.strip().split())
+                    total_x += x
+                    total_y += y
+                    total_z += z
+                    num_vertices += 1
 
-        surfaces_label = ttk.Label(model_options_window, text="Surfaces:")
-        surfaces_label.grid(row=3, column=0, padx=6, sticky="w")
-        surfaces_entry = ttk.Entry(model_options_window)
-        surfaces_entry.grid(row=3, column=1, padx=5, pady=5)
-        surfaces_entry.insert(0, surfaces)  # Insert surfaces data into entry field
+                avg_x = total_x / num_vertices
+                avg_y = total_y / num_vertices
+                avg_z = total_z / num_vertices
 
-        image_label = ttk.Label(model_options_window, text="Image:")
-        image_label.grid(row=4, column=0, padx=6, sticky="w")
-        image_entry = ttk.Entry(model_options_window)
-        image_entry.grid(row=4, column=1, padx=5, pady=5)
-        image_entry.insert(0, image)  # Insert image path data into entry field
+                # Add labels and entry fields for model options
+                vertices_label = ttk.Label(model_options_window, text="Vertices:")
+                vertices_label.grid(row=0, column=0, padx=6, sticky="w")
+                vertices_entry = ttk.Entry(model_options_window)
+                vertices_entry.grid(row=0, column=1, padx=5, pady=5)
+                vertices_entry.insert(0, vertices)  # Insert vertices data into entry field
 
-        # Add a "Save" button to save changes
-        save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
-        save_button.grid(row=6, columnspan=2, pady=10)
+                # Add a label and entry field for the position
+                position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
+                position_label.grid(row=5, column=0, padx=6, sticky="w")
+                position_entry = ttk.Entry(model_options_window)
+                position_entry.grid(row=5, column=1, padx=5, pady=5)
+                position_entry.insert(0, f"{avg_x} {avg_y} {avg_z}")  # Insert average position data into entry field
 
-    def calculate_average_xyz(vertices_str):
-        vertices = vertices_str.split(",")
-        total_x, total_y, total_z = 0, 0, 0
-        num_vertices = len(vertices)
+                edges_label = ttk.Label(model_options_window, text="Edges:")
+                edges_label.grid(row=1, column=0, padx=6, sticky="w")
+                edges_entry = ttk.Entry(model_options_window)
+                edges_entry.grid(row=1, column=1, padx=5, pady=5)
+                edges_entry.insert(0, edges)  # Insert edges data into entry field
 
-        # Calculate the total X, Y, and Z coordinates
-        for vertex in vertices:
-            x, y, z = map(float, vertex.strip().split())
-            total_x += x
-            total_y += y
-            total_z += z
+                colors_label = ttk.Label(model_options_window, text="Colors (RGB):")
+                colors_label.grid(row=2, column=0, padx=6, sticky="w")
+                colors_entry = ttk.Entry(model_options_window)
+                colors_entry.grid(row=2, column=1, padx=5, pady=5)
+                colors_entry.insert(0, colors)  # Insert colors data into entry field
 
-        # Calculate the average X, Y, and Z coordinates
-        average_x = total_x / num_vertices
-        average_y = total_y / num_vertices
-        average_z = total_z / num_vertices
+                surfaces_label = ttk.Label(model_options_window, text="Surfaces:")
+                surfaces_label.grid(row=3, column=0, padx=6, sticky="w")
+                surfaces_entry = ttk.Entry(model_options_window)
+                surfaces_entry.grid(row=3, column=1, padx=5, pady=5)
+                surfaces_entry.insert(0, surfaces)  # Insert surfaces data into entry field
 
-        return average_x, average_y, average_z
+                image_label = ttk.Label(model_options_window, text="Image:")
+                image_label.grid(row=4, column=0, padx=6, sticky="w")
+                image_entry = ttk.Entry(model_options_window)
+                image_entry.grid(row=4, column=1, padx=5, pady=5)
+                image_entry.insert(0, image)  # Insert image path data into entry field
+
+                # Add a "Save" button to save changes
+                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
+                save_button.grid(row=6, columnspan=2, pady=10)
 
     def option1_action():
-        print("Edit")
-        # Call the function to display model options pane
         show_model_options()
 
     # Create a context menu
