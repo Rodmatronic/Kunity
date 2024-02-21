@@ -320,9 +320,12 @@ class editorenv(OpenGLFrame):
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(0.0, 0.0, -5)
+         
         GL.glClearColor(0.4, 0.5, 1.0, 1.0)
+        #GL.glWindowHint(GL.GLFW_SAMPLES, 4);
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_PROGRAM_POINT_SIZE)
+        GL.glEnable(GL.GL_MULTISAMPLE); 
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
         if not hasattr(self, "shader"):
            self.shader = OpenGL.GL.shaders.compileProgram(
