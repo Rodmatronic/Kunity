@@ -86,6 +86,12 @@ def compileShader(source, shaderType):
             shaderType,
         )
     return shader
+"""
+this is placeholder to fall back to if no shaders are loaded
+how opengl works is if you have shaders enabled you MUST have a shader 
+if one is no found it crashes to desktop
+so these are for the fallback exception 
+"""
 vertex_shader = """#version 130 
 in vec3 position;
 varying vec3 vertex_color;
