@@ -5,8 +5,9 @@ from tkinter import *
 from tkinter import messagebox 
 from PIL import Image, ImageTk
 from pyopengltk import OpenGLFrame
-from OpenGL import GL, GLU
+from OpenGL import GL, GLU, GLUT
 import OpenGL.GL.shaders
+
 import ctypes
 import types
 import numpy
@@ -14,7 +15,7 @@ import os
 import glob
 import gc
 import platform
-import shutil #not used
+import shutil 
 import time
 
 # Some global configurations
@@ -92,6 +93,7 @@ how opengl works is if you have shaders enabled you MUST have a shader
 if one is no found it crashes to desktop
 so these are for the fallback exception 
 """
+
 vertex_shader = """#version 130 
 in vec3 position;
 varying vec3 vertex_color;
@@ -101,15 +103,23 @@ void main()
    gl_Position = vec4( proj*position, 1.0);
    gl_PointSize = 4./(0.5 + length( position ));
    vertex_color = vec3( position.x/2+.5, position.y/2+.5, position.z/2+.5);
-}""" #TODO: make a gui to open .vert glsl source
-fragment_shader = """#version 130
-varying vec3 vertex_color;
+}
+""" #TODO: make a gui to open .vert glsl source
+fragment_shader = """ #version 130
+out vec4 FragColor;
+
+in vec2 TexCoords;
+
+uniform sampler2D texture1;
+
 void main()
-{
- 
-   gl_FragColor = vec4(vertex_color,0.25f);
-   
-}"""#TODO: make a gui to open .frag glsl source
+{             
+    vec4 texColor = texture(texture1, TexCoords);
+    if(texColor.a < 0.1)
+        discard;
+    FragColor = texColor;
+}
+"""#TODO: make a gui to open .frag glsl source
 logwrite("KUNITY logfile --- \\/\n---------------------")
 
 def populate_tree(tree, node, parent=""):
@@ -319,19 +329,28 @@ class editorenv(OpenGLFrame):
     def initgl(self):
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
+        
         GL.glTranslatef(0.0, 0.0, -5)
          
         GL.glClearColor(0.4, 0.5, 1.0, 1.0)
-        #GL.glWindowHint(GL.GLFW_SAMPLES, 4);
+        GL.glEnable(GL.GL_BLEND)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_PROGRAM_POINT_SIZE)
         GL.glEnable(GL.GL_MULTISAMPLE); 
+        GL.glEnable(GL.GL_SAMPLE_ALPHA_TO_COVERAGE)
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glEnable(GL.GL_POLYGON_SMOOTH) 
+        #GL.glEnable(GL.GL_DITHER)
+        GL.glEnable(GL.GL_SAMPLE_SHADING)
+        GL.glEnable(GL.GL_POINT_SMOOTH)
+        GL.glMinSampleShading(1.0)
         if not hasattr(self, "shader"):
            self.shader = OpenGL.GL.shaders.compileProgram(
                compileShader(vertex_shader, GL.GL_VERTEX_SHADER),
-               compileShader(fragment_shader, GL.GL_FRAGMENT_SHADER)
-               )
+               compileShader(fragment_shader, GL.GL_FRAGMENT_SHADER))
+           self.proj = GL.glGetUniformLocation(self.shader, bytestr('proj'))
+           
         self.camera_x = 0.0
         self.camera_y = 0.0
         self.camera_z = -5.0
@@ -341,10 +360,14 @@ class editorenv(OpenGLFrame):
     def redraw(self):
         GL.glLoadIdentity()
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 10000.0)  # Adjusted far clipping plane to 100.0
         GL.glTranslatef(self.camera_x, self.camera_y, self.camera_z)
         GL.glRotatef(self.view_angle_x, 1, 0, 0)
         GL.glRotatef(self.view_angle_y, 0, 1, 0)
+        
+        #GL.glUseProgram(self.shader)
+        
         RenderAll()
         gc.collect()
 
