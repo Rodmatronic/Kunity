@@ -75,8 +75,8 @@ def compileandrun():
     except OSError as err:
         logwrite(err)
         messagebox.showinfo("showerror", "No Valid Camera in Scene") 
-        logwrite("error(!):No Valid Camera in Scene")
-        logwrite("warn(W):Non-Fatal exception caught ")
+        logwrite("error(!): No Valid Camera in Scene")
+        logwrite("warn(W): Non-Fatal exception caught ")
 
 def stopplay():
     global iscompile
@@ -138,7 +138,7 @@ def RenderAll():
         if not vertices or not edges:
             if not rot or not pos or not camid:
                 if not sound_path:
-                    logwrite(f"error(!)Incomplete data in the asset file: {asset_file}")
+                    logwrite(f"error(!): Incomplete data in the asset file: {asset_file}")
                     continue  # Move to the next asset file
             else:
                 #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
@@ -163,7 +163,7 @@ def RenderAll():
                         if vertex < len(vertices):
                             GL.glVertex3fv(vertices[vertex])
                         else:
-                            print(f"Index {vertex} is out of range for vertices list with length {len(vertices)}")
+                            logwrite(f"error(!): Index {vertex} is out of range for vertices list with length {len(vertices)}")
                 
                 GL.glEnd()
             else:
