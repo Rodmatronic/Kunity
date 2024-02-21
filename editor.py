@@ -10,6 +10,7 @@ import os
 import glob
 import gc
 import platform
+import shutil
 
 cameralist = []
 # Some global configurations
@@ -20,6 +21,7 @@ global campos
 global camrot
 global camid
 iscompile = 0
+camcount = 2 # 1 should be reserved
 #campos = None
 #camrot = None 
 #camid = None
@@ -134,18 +136,20 @@ def RenderAll():
                     rot = [tuple(map(float, rots.split())) for rots in rot_data]
                 elif line.startswith("id:"):
                     camid = line.split(":")[1].strip()
+                elif line.startswith("sound_path:"):
+                    sound_path = line.split(":")[1].strip()
         # Check if all necessary data has been read
         if not vertices or not edges:
             if not rot or not pos or not camid:
-                logwrite(f"Incomplete data in the asset file: {asset_file}")
-                continue  # Move to the next asset file
+                if not sound_path:
+                    logwrite(f"Incomplete data in the asset file: {asset_file}")
+                    continue  # Move to the next asset file
             else:
                 #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
                 iscam = True
                 campos = pos[0]
                 camrot = rot[0]
                 camid = camid
-                
                 
         # If image path is specified, draw textured quads
         if image_path and iscam == False:
@@ -368,6 +372,7 @@ def main():
         Label(top, text="Powered by:", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=42, y=180)
 
         Label(top, text="Ver " + global_ver + " " + global_year + ", python version " + platform.python_version(), bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=145)
+    
     def create_camera(camid):#creates camera with id (so you can have more than one camera)
         object_name = new_object_entry.get()
 
@@ -382,12 +387,73 @@ def main():
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
-    def create_kasset():
+
+    def create_soundsrc():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".kasset" extension
+            with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
+                print("Created file:", object_name)
+                
+                file.write(str("[Kunity soundsrc]\nsound_path: NULL"))
+            # Refresh the file view
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+
+    def create_script():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".kasset" extension
+            with open(f"./scene/Assets/scripts/{object_name}.py", "w") as file:
+                print("Created file:", object_name)
+                
+                file.write(str('def start():\n  print("Hello, World!")'))
+            # Refresh the file view
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+
+    def create_kasset_menu():
+        # Create a new Toplevel window for the model options
+        asset_selector_window = Toplevel(root)
+        asset_selector_window.resizable(False, False)
+        asset_selector_window.attributes('-topmost', True)
+        asset_selector_window.configure(bg="#484848")
+        asset_selector_window.geometry("420x500")
+        # model_options_window.iconbitmap("logo.ico")
+
         # Get the name of the new object
         object_name = new_object_entry.get()
-        if object_name == "camera":
-            create_camera("1")
-        else:
+
+        asset_selector_window.title("'" + object_name + "' Select type")
+
+        model_button = ttk.Button(asset_selector_window, text="📦 Generic asset", command=lambda: [create_kasset("model"), asset_selector_window.destroy()])
+        model_button.grid(row=1, columnspan=1, pady=2, sticky=W)
+
+        cam_button = ttk.Button(asset_selector_window, text="📷 Camera", command=lambda: [create_kasset("camera"), asset_selector_window.destroy()])
+        cam_button.grid(row=2, columnspan=1, pady=2, sticky=W)
+
+        src_button = ttk.Button(asset_selector_window, text="🔈Sound source", command=lambda: [create_kasset("soundsrc"), asset_selector_window.destroy()])
+        src_button.grid(row=3, columnspan=1, pady=2, sticky=W)
+
+        script_button = ttk.Button(asset_selector_window, text="🐍 Script", command=lambda: [create_kasset("script"), asset_selector_window.destroy()])
+        script_button.grid(row=4, columnspan=1, pady=2, sticky=W)
+
+    def create_kasset(type):
+        object_name = new_object_entry.get()
+
+        if type == "camera":
+            create_camera(camcount+1)
+        elif type == "soundsrc":
+            create_soundsrc()
+        elif type == "script":
+            create_script()
+        elif type == "model":
             # Check if the name is not empty
             print("Attempting to create file:", object_name)
             if object_name:
@@ -413,7 +479,23 @@ def main():
                 tree.delete(item)
                 print("File deleted successfully.")
             except FileNotFoundError:
-                print("File not found:", file_path)
+                try:
+                    file_path = os.path.join("./scene/Assets/scripts/", file_name)
+                    # Remove the file from the file system
+                    os.remove(file_path)
+                    # Delete the item from the Treeview
+                    tree.delete(item)
+                    print("File deleted successfully.")
+                except FileNotFoundError:
+                    try:
+                        file_path = os.path.join("./scene/Assets/materials/", file_name)
+                        # Remove the file from the file system
+                        os.remove(file_path)
+                        # Delete the item from the Treeview
+                        tree.delete(item)
+                        print("File deleted successfully.")
+                    except FileNotFoundError:
+                        print("File not found:", file_path)
 
     # Set dark mode theme
     style = ttk.Style()
@@ -440,8 +522,8 @@ def main():
     filemenu.add_command(label="Save", command=donothing)
     filemenu.add_command(label="Save as...", command=donothing)
     filemenu.add_separator()
+    filemenu.add_command(label="Restart", command=main)
     filemenu.add_command(label="Exit", command=safe_exit)
-
     menubar.add_cascade(label="File", menu=filemenu)
 
     editmenu = Menu(menubar, tearoff=0)
@@ -490,7 +572,7 @@ def main():
 
     # Update button creation with images
     play_button = ttk.Button(top_bar_frame, image=play_photo, command=compileandrun)
-    pause_button = ttk.Button(top_bar_frame, image=pause_photo, command=compileandrun)
+    pause_button = ttk.Button(top_bar_frame, image=pause_photo, command=stopplay)
     stop_button = ttk.Button(top_bar_frame, image=stop_photo, command=stopplay)
 
     # Pack buttons
@@ -529,7 +611,7 @@ def main():
     frm.pack(fill=tk.BOTH, expand=True)
 
     # Add a "+" button to create a new ".kasset" object
-    create_button = ttk.Button(left_frame, text="+", command=create_kasset)
+    create_button = ttk.Button(left_frame, text="+", command=create_kasset_menu)
     create_button.pack(side=tk.RIGHT, padx=5, pady=3)
 
     # Add an entry field to enter the name of the new object
@@ -664,7 +746,8 @@ def main():
                 # Add a "Save" button to save changes
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_camera_changes(position_entry, rotation_entry, id_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
-
+            elif first_line == "[Kunity soundsrc]":
+                print("Edit type: Sound")
             else:
                 print("Edit type: Normal/model")
                 # Initialize variables to store model data
@@ -748,6 +831,7 @@ def main():
 
     # Create a context menu
     context_menu = Menu(root, tearoff=0)
+    context_menu.add_command(label="New...", command=create_kasset_menu)
     context_menu.add_command(label="Edit model...", command=option1_action)
 
     tree.bind("<Button-3>", on_tree_right_click)  # Bind right-click event to the function
