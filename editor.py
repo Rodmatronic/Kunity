@@ -70,17 +70,13 @@ def compileandrun():
         print(campos)
         print(camrot)
         print(camid)
-        #GL.glLoadIdentity()
-        #GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        #GL.glTranslatef(campos[0],campos[1],campos[2])
-        #RenderAll()
-        #gc.collect()
+       
         frm.setpos(campos[0],campos[1],campos[2],camrot[0],camrot[1])
     except OSError as err:
         logwrite(err)
         messagebox.showinfo("showerror", "No Valid Camera in Scene") 
-        logwrite("error(!):No Valid Camera in Scene")
-        logwrite("warn(W):Non-Fatal exception caught ")
+        logwrite("error(!): No Valid Camera in Scene")
+        logwrite("warn(W): Non-Fatal exception caught ")
 
 def stopplay():
     global iscompile
@@ -142,7 +138,7 @@ def RenderAll():
         if not vertices or not edges:
             if not rot or not pos or not camid:
                 if not sound_path:
-                    logwrite(f"Incomplete data in the asset file: {asset_file}")
+                    logwrite(f"error(!): Incomplete data in the asset file: {asset_file}")
                     continue  # Move to the next asset file
             else:
                 #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
@@ -167,7 +163,7 @@ def RenderAll():
                         if vertex < len(vertices):
                             GL.glVertex3fv(vertices[vertex])
                         else:
-                            print(f"Index {vertex} is out of range for vertices list with length {len(vertices)}")
+                            logwrite(f"error(!): Index {vertex} is out of range for vertices list with length {len(vertices)}")
                 
                 GL.glEnd()
             else:
@@ -222,8 +218,9 @@ def renderXYdepth():
 def load_texture(texture_path):
     try:
         texture_image = Image.open(texture_path)
-    except IOError as ex:
-        print("Failed to open texture file:", texture_path)
+    except IOError as err:
+        logwrite("error(!): Failed to open texture file: "+texture_path)
+        logwrite("error(!): "+err)
         return None
     
     texture_data = texture_image.tobytes("raw", "RGBA", 0, -1)
@@ -339,7 +336,7 @@ def main():
     root.bind("<KeyRelease>", on_key_release)
 
     def donothing():
-        print("Placeholder")
+        pass
 
     def open_about():
         logwrite("About menu open")
@@ -396,7 +393,7 @@ def main():
         if object_name:
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
-                print("Created file:", object_name)
+                print("note(N): Created file:", object_name)
                 
                 file.write(str("[Kunity soundsrc]\nsound_path: NULL"))
             # Refresh the file view
@@ -411,7 +408,7 @@ def main():
         if object_name:
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/scripts/{object_name}.py", "w") as file:
-                print("Created file:", object_name)
+                print("note(N): Created file:", object_name)
                 
                 file.write(str('def start():\n  print("Hello, World!")'))
             # Refresh the file view
@@ -455,11 +452,11 @@ def main():
             create_script()
         elif type == "model":
             # Check if the name is not empty
-            print("Attempting to create file:", object_name)
+            logwrite("note(N): Attempting to create file:"+ object_name)
             if object_name:
                 # Create a new file with the given name and the ".kasset" extension
                 with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
-                    print("Created file:", object_name)
+                    logwrite("note(N): Created file:"+ object_name)
                     file.write("[Kunity object]\nVertices: 0.0 0.0 0.0\nEdges:\nColors:\nSurfaces:")
                 # Refresh the file view
                 tree.delete(*tree.get_children())
@@ -471,13 +468,13 @@ def main():
         for item in selected_items:
             file_name = tree.item(item, "text")
             file_path = os.path.join("./scene/Assets/", file_name)
-            print("Attempting to delete file:", file_path)
+            logwrite("note(N): Attempting to delete file:"+ file_path)
             try:
                 # Remove the file from the file system
                 os.remove(file_path)
                 # Delete the item from the Treeview
                 tree.delete(item)
-                print("File deleted successfully.")
+                logwrite("note(N): File deleted successfully.")
             except FileNotFoundError:
                 try:
                     file_path = os.path.join("./scene/Assets/scripts/", file_name)
@@ -485,7 +482,7 @@ def main():
                     os.remove(file_path)
                     # Delete the item from the Treeview
                     tree.delete(item)
-                    print("File deleted successfully.")
+                    logwrite("note(N): File deleted successfully.")
                 except FileNotFoundError:
                     try:
                         file_path = os.path.join("./scene/Assets/materials/", file_name)
@@ -493,9 +490,9 @@ def main():
                         os.remove(file_path)
                         # Delete the item from the Treeview
                         tree.delete(item)
-                        print("File deleted successfully.")
+                        logwrite("note(N): File deleted successfully.")
                     except FileNotFoundError:
-                        print("File not found:", file_path)
+                        logwrite("error(!): File not found:"+ file_path)
 
     # Set dark mode theme
     style = ttk.Style()
@@ -639,14 +636,14 @@ def main():
 
         # Check if the position input is valid
         if len(position) != 3:
-            print("Invalid position input. Please enter three values separated by spaces for X, Y, and Z.")
+            logwrite("error(!): Invalid position input. Please enter three values separated by spaces for X, Y, and Z.")
             return
 
         try:
             # Attempt to convert position components to float
             position = [float(coord) for coord in position]
         except ValueError:
-            print("Invalid position input. Please enter numeric values for X, Y, and Z.")
+            logwrite("error(!): Invalid position input. Please enter numeric values for X, Y, and Z.")
             return
 
         # Apply the position changes to the vertices
@@ -661,7 +658,7 @@ def main():
             file.write(f"Surfaces: {updated_surfaces}\n")
             file.write(f"Image: {updated_image}\n")
 
-        print("Changes saved successfully!")
+        logwrite("note(N): Changes saved successfully!")
 
     def save_camera_changes(position_entry, rotation_entry, id_entry, file_path):
         updated_position = position_entry.get()
@@ -673,7 +670,7 @@ def main():
             file.write(f"pos: {updated_position}\n")
             file.write(f"rot: {updated_rotation}\n")
             file.write(f"id: {updated_id}\n")
-        print("Changes saved successfully!")
+        logwrite("note(N): Changes saved successfully!")
 
     def set_vertices_to_position(vertices_str, position):
         # Split the vertices string into individual vertices
@@ -712,7 +709,7 @@ def main():
             model_data = file.readlines()
             first_line = model_data[0].strip()
             if first_line == "[Kunity camera]":
-                print("Edit type: Camera")
+                logwrite("note(N): Edit type: Camera")
                 pos = ""
                 rot = ""
                 id = ""
@@ -747,9 +744,9 @@ def main():
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_camera_changes(position_entry, rotation_entry, id_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity soundsrc]":
-                print("Edit type: Sound")
+                logwrite("note(N): Edit type: Sound")
             else:
-                print("Edit type: Normal/model")
+                logwrite("note(N): Edit type: Normal/model")
                 # Initialize variables to store model data
                 vertices = ""
                 edges = ""
