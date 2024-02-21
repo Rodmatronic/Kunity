@@ -432,7 +432,7 @@ def main():
 
         asset_selector_window.title("'" + object_name + "' Select type")
 
-        model_button = ttk.Button(asset_selector_window, text="☐ Generic asset", command=lambda: [create_kasset("model"), asset_selector_window.destroy()])
+        model_button = ttk.Button(asset_selector_window, text="📦 Generic asset", command=lambda: [create_kasset("model"), asset_selector_window.destroy()])
         model_button.grid(row=1, columnspan=1, pady=2, sticky=W)
 
         cam_button = ttk.Button(asset_selector_window, text="📷 Camera", command=lambda: [create_kasset("camera"), asset_selector_window.destroy()])
@@ -572,7 +572,7 @@ def main():
 
     # Update button creation with images
     play_button = ttk.Button(top_bar_frame, image=play_photo, command=compileandrun)
-    pause_button = ttk.Button(top_bar_frame, image=pause_photo, command=compileandrun)
+    pause_button = ttk.Button(top_bar_frame, image=pause_photo, command=stopplay)
     stop_button = ttk.Button(top_bar_frame, image=stop_photo, command=stopplay)
 
     # Pack buttons
@@ -831,6 +831,7 @@ def main():
 
     # Create a context menu
     context_menu = Menu(root, tearoff=0)
+    context_menu.add_command(label="New...", command=create_kasset_menu)
     context_menu.add_command(label="Edit model...", command=option1_action)
 
     tree.bind("<Button-3>", on_tree_right_click)  # Bind right-click event to the function
