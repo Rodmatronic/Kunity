@@ -653,7 +653,7 @@ def main():
                 position_label.grid(row=5, column=0, padx=6, sticky="w")
                 position_entry = ttk.Entry(model_options_window)
                 position_entry.grid(row=5, column=1, padx=5, pady=5)
-                position_entry.insert(0, f"{pos}")
+                position_entry.insert(0, pos)
 
                 id_label = ttk.Label(model_options_window, text="Camera ID:")
                 id_label.grid(row=2, column=0, padx=6, sticky="w")
