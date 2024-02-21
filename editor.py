@@ -279,6 +279,15 @@ class editorenv(OpenGLFrame):
         gc.collect()
 
     def setpos(self, x, y, z, xrot, yrot):
+        
+        self.camera_x = x
+        self.camera_y = y
+        self.camera_z = z
+        self.view_angle_x = xrot
+        self.view_angle_y = yrot
+       
+    def move_camera(self, direction):
+        step = 0.2
         global camerax
         global cameray
         global cameraz
@@ -289,14 +298,6 @@ class editorenv(OpenGLFrame):
         cameraz = self.camera_z
         camerarotx = self.view_angle_x
         cameraroty = self.view_angle_y
-        self.camera_x = x
-        self.camera_y = y
-        self.camera_z = z
-        self.view_angle_x = xrot
-        self.view_angle_y = yrot
-       
-    def move_camera(self, direction):
-        step = 0.2
         if direction == "up":
             self.camera_y -= step
         elif direction == "down":
@@ -315,6 +316,16 @@ class editorenv(OpenGLFrame):
             self.camera_x += step
 
     def rotate_camera(self, direction):
+        global camerax
+        global cameray
+        global cameraz
+        global camerarotx
+        global cameraroty
+        camerax = self.camera_x
+        cameray = self.camera_y
+        cameraz = self.camera_z
+        camerarotx = self.view_angle_x
+        cameraroty = self.view_angle_y
         angle_step = 2
         if direction == "left_arrow":
             self.view_angle_y += angle_step
