@@ -1,5 +1,5 @@
 import tkinter as tk
-import tkinter.filedialog as filedialog
+import tkinter.filedialog as filedialog #not used
 from tkinter import ttk
 from tkinter import *
 from tkinter import messagebox 
@@ -10,9 +10,8 @@ import os
 import glob
 import gc
 import platform
-import shutil
+import shutil #not used
 
-cameralist = []
 # Some global configurations
 global_ver = "0.14"
 global_year = "2024"
@@ -44,7 +43,14 @@ def logwrite(log):
 def safe_exit():
     logwrite("Exit")
     exit()
-
+def cut():
+    pass
+def copy():
+    pass
+def paste():
+    pass
+def rename():
+    pass
 logwrite("KUNITY logfile --- \\/\n---------------------")
 
 def populate_tree(tree, node, parent=""):
@@ -57,7 +63,10 @@ def populate_tree(tree, node, parent=""):
             populate_tree(tree, os.path.join(node, item), parent=parent_id)
     else:
         tree.insert(parent, "end", text=os.path.basename(node))
-
+def undo():
+    pass
+def redo():
+    pass
 def compileandrun():
     global campos
     global frm
@@ -133,6 +142,8 @@ def RenderAll():
                 elif line.startswith("id:"):
                     camid = line.split(":")[1].strip()
                 elif line.startswith("sound_path:"):
+                    sound_path = line.split(":")[1].strip()
+                elif line.startswith("script_path:"):
                     sound_path = line.split(":")[1].strip()
         # Check if all necessary data has been read
         if not vertices or not edges:
@@ -407,10 +418,10 @@ def main():
         print("Attempting to create file:", object_name)
         if object_name:
             # Create a new file with the given name and the ".kasset" extension
-            with open(f"./scene/Assets/scripts/{object_name}.py", "w") as file:
+            with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
                 print("note(N): Created file:", object_name)
                 
-                file.write(str('def start():\n  print("Hello, World!")'))#add code editor to edit window :3
+                file.write(str('[Kunity script]\nscript_path: NULL'))#add code editor to edit window :3
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
@@ -525,14 +536,14 @@ def main():
 
     editmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Edit", menu=editmenu)
-    editmenu.add_command(label="Undo", command=donothing)
-    editmenu.add_command(label="Redo", command=donothing)
+    editmenu.add_command(label="Undo", command=undo)
+    editmenu.add_command(label="Redo", command=redo)
     editmenu.add_separator()
-    editmenu.add_command(label="Cut", command=donothing)
-    editmenu.add_command(label="Copy", command=donothing)
-    editmenu.add_command(label="Paste", command=donothing)
+    editmenu.add_command(label="Cut", command=cut)
+    editmenu.add_command(label="Copy", command=copy)
+    editmenu.add_command(label="Paste", command=paste)
     editmenu.add_separator()
-    editmenu.add_command(label="Rename", command=donothing)
+    editmenu.add_command(label="Rename", command=rename)
 
     windowmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Window", menu=windowmenu)
@@ -624,7 +635,12 @@ def main():
         tree.selection_set(item)
         # Display the context menu
         context_menu.post(event.x_root, event.y_root)
-
+    def save_script_changes(path_entry, file_path):
+        updated_path = path_entry.get()
+        with open(file_path, "w") as file:
+            file.write("[Kunity script]\n")
+            file.write(f"script_path: {updated_path}\n")
+        logwrite("note(N): Changes saved successfully!")
     def save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path):
         # Get the updated data from the entry fields
         updated_vertices = vertices_entry.get()
@@ -671,7 +687,7 @@ def main():
             file.write(f"rot: {updated_rotation}\n")
             file.write(f"id: {updated_id}\n")
         logwrite("note(N): Changes saved successfully!")
-
+        
     def set_vertices_to_position(vertices_str, position):
         # Split the vertices string into individual vertices
         vertices = vertices_str.split(",")
@@ -745,8 +761,19 @@ def main():
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity soundsrc]":
                 logwrite("note(N): Edit type: Sound")
-            elif first_line == "#[Kunity script]":
+            elif first_line == "[Kunity script]":
                 logwrite("note(N): Edit type: Script")
+                path = ""
+                for line in model_data:
+                    if line.startswith("script_path:"):
+                        path = line.split(":")[1].strip()
+                path_label = ttk.Label(model_options_window, text="script path:")
+                path_label.grid(row=1, column=0, padx=6, sticky="w")
+                path_entry = ttk.Entry(model_options_window)
+                path_entry.grid(row=1, column=1, padx=5, pady=5)
+                path_entry.insert(0, path)
+                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
+                save_button.grid(row=6, columnspan=2, pady=10)
                 #do some crap here to edit
             else:
                 logwrite("note(N): Edit type: Normal/model")
@@ -825,7 +852,7 @@ def main():
                 # Add a "Save" button to save changes
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
-
+    
     def option1_action():
         show_model_options()
 
