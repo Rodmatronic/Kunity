@@ -6,11 +6,16 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from pyopengltk import OpenGLFrame
 from OpenGL import GL, GLU
+import OpenGL.GL.shaders
+import ctypes
+import types
+import numpy
 import os
 import glob
 import gc
 import platform
 import shutil #not used
+import time
 
 # Some global configurations
 global_ver = "0.14"
@@ -20,7 +25,7 @@ global campos
 global camrot
 global camid
 iscompile = 0
-camcount = 2 # 1 should be reserved
+camcount = 2 #NOTE: 1 should be reserved
 #campos = None
 #camrot = None 
 #camid = None
@@ -51,6 +56,60 @@ def paste():
     pass
 def rename():
     pass
+def compileShader(source, shaderType):
+    """
+    uses code from: https://github.com/jonwright/pyopengltk/blob/master/examples/shader_example.py
+    Compile shader source of given type
+        source -- GLSL source-code for the shader
+    shaderType -- GLenum GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, etc,
+        returns GLuint compiled shader reference
+    raises RuntimeError when a compilation failure occurs
+    """
+    if isinstance(source, str):
+        source = [source]
+    elif isinstance(source, bytes):
+        source = [source.decode('utf-8')]
+
+    shader = GL.glCreateShader(shaderType)
+    GL.glShaderSource(shader, source)
+    GL.glCompileShader(shader)
+    result = GL.glGetShaderiv(shader, GL.GL_COMPILE_STATUS)
+    if not(result):
+        # TODO: this will be wrong if the user has
+        # disabled traditional unpacking array support.
+        raise RuntimeError(
+            """Shader compile failure (%s): %s""" % (
+                result,
+                GL.glGetShaderInfoLog(shader),
+            ),
+            source,
+            shaderType,
+        )
+    return shader
+"""
+this is placeholder to fall back to if no shaders are loaded
+how opengl works is if you have shaders enabled you MUST have a shader 
+if one is no found it crashes to desktop
+so these are for the fallback exception 
+"""
+vertex_shader = """#version 130 
+in vec3 position;
+varying vec3 vertex_color;
+uniform mat3 proj;
+void main()
+{
+   gl_Position = vec4( proj*position, 1.0);
+   gl_PointSize = 4./(0.5 + length( position ));
+   vertex_color = vec3( position.x/2+.5, position.y/2+.5, position.z/2+.5);
+}""" #TODO: make a gui to open .vert glsl source
+fragment_shader = """#version 130
+varying vec3 vertex_color;
+void main()
+{
+ 
+   gl_FragColor = vec4(vertex_color,0.25f);
+   
+}"""#TODO: make a gui to open .frag glsl source
 logwrite("KUNITY logfile --- \\/\n---------------------")
 
 def populate_tree(tree, node, parent=""):
@@ -88,10 +147,17 @@ def compileandrun():
         logwrite("warn(W): Non-Fatal exception caught ")
 
 def stopplay():
+    global camerax
+    global cameray
+    global cameraz
+    global camerarotx
+    global cameraroty
+    global frm
     global iscompile
     iscompile = 0
     logwrite("Stop")
-
+    frm.setpos(camerax,cameray,cameraz,camerarotx,cameraroty)
+    #TODO make it also set camera back when window changed
 def RenderAll():
    
     # Find all .kasset files in the specified directory
@@ -211,7 +277,8 @@ def draw_textured_quad(texture_id, vertices, surface):
     # End drawing quads
     GL.glEnd()
     GL.glDeleteTextures(texture_id)
-
+def bytestr(s):
+    return s.encode("utf-8") + b"\000"
 def renderXYdepth():
     color = (global_scene_noshade_brightness)
 
@@ -253,8 +320,15 @@ class editorenv(OpenGLFrame):
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         GL.glTranslatef(0.0, 0.0, -5)
+        GL.glClearColor(0.4, 0.5, 1.0, 1.0)
         GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_PROGRAM_POINT_SIZE)
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
+        if not hasattr(self, "shader"):
+           self.shader = OpenGL.GL.shaders.compileProgram(
+               compileShader(vertex_shader, GL.GL_VERTEX_SHADER),
+               compileShader(fragment_shader, GL.GL_FRAGMENT_SHADER)
+               )
         self.camera_x = 0.0
         self.camera_y = 0.0
         self.camera_z = -5.0
@@ -272,6 +346,7 @@ class editorenv(OpenGLFrame):
         gc.collect()
 
     def setpos(self, x, y, z, xrot, yrot):
+        
         self.camera_x = x
         self.camera_y = y
         self.camera_z = z
@@ -280,6 +355,16 @@ class editorenv(OpenGLFrame):
        
     def move_camera(self, direction):
         step = 0.2
+        global camerax
+        global cameray
+        global cameraz
+        global camerarotx
+        global cameraroty
+        camerax = self.camera_x
+        cameray = self.camera_y
+        cameraz = self.camera_z
+        camerarotx = self.view_angle_x
+        cameraroty = self.view_angle_y
         if direction == "up":
             self.camera_y -= step
         elif direction == "down":
@@ -298,6 +383,16 @@ class editorenv(OpenGLFrame):
             self.camera_x += step
 
     def rotate_camera(self, direction):
+        global camerax
+        global cameray
+        global cameraz
+        global camerarotx
+        global cameraroty
+        camerax = self.camera_x
+        cameray = self.camera_y
+        cameraz = self.camera_z
+        camerarotx = self.view_angle_x
+        cameraroty = self.view_angle_y
         angle_step = 2
         if direction == "left_arrow":
             self.view_angle_y += angle_step
@@ -425,7 +520,90 @@ def main():
             # Refresh the file view
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+    def create_vert_glsl():
+        object_name = new_object_entry.get()
 
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".vert" extension
+            with open(f"./scene/Assets/shaders/{object_name}.vert", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_frag_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".frag" extension
+            with open(f"./scene/Assets/shaders/{object_name}.frag", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_geom_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".geom" extension
+            with open(f"./scene/Assets/shaders/{object_name}.geom", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_tesc_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".tesc" extension
+            with open(f"./scene/Assets/shaders/{object_name}.tesc", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_tese_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".tese" extension
+            with open(f"./scene/Assets/shaders/{object_name}.tese", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_comp_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".comp" extension
+            with open(f"./scene/Assets/shaders/{object_name}.comp", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
+    def create_glsl():
+        object_name = new_object_entry.get()
+
+        # Check if the name is not empty
+        print("Attempting to create file:", object_name)
+        if object_name:
+            # Create a new file with the given name and the ".glsl" extension
+            with open(f"./scene/Assets/shaders/{object_name}.glsl", "w") as file:
+                print("note(N): Created file:", object_name)
+                file.write(str('#version 130\n'))
+            tree.delete(*tree.get_children())
+            populate_tree(tree, "./scene")
     def create_kasset_menu():
         # Create a new Toplevel window for the model options
         asset_selector_window = Toplevel(root)
@@ -450,7 +628,8 @@ def main():
         src_button.grid(row=3, columnspan=1, pady=2, sticky=W)
 
         script_button = ttk.Button(asset_selector_window, text="🐍 Script", command=lambda: [create_kasset("script"), asset_selector_window.destroy()])
-        script_button.grid(row=4, columnspan=1, pady=2, sticky=W)
+        script_button.grid(row=4, columnspan=1, pady=2, sticky=W)#TODO: add glsl entry and when pressed make it open a submenu with all shadertypes
+        
 
     def create_kasset(type):
         object_name = new_object_entry.get()
@@ -461,6 +640,21 @@ def main():
             create_soundsrc()
         elif type == "script":
             create_script()
+        elif type == "vert_glsl": #vertex glsl shader
+            pass
+        elif type == "frag_glsl": #fragment glsl shader
+            pass
+        elif type == "geom_glsl": #geometry glsl shader
+            pass
+        elif type == "tesc_glsl": #tessellation control glsl shader
+            pass
+        elif type == "tese_glsl": #tessellation eval glsl shader
+            pass
+        elif type == "comp_glsl": #compute glsl shader
+            pass
+        elif type == "glsl": #plain old glsl shader
+            pass
+        
         elif type == "model":
             # Check if the name is not empty
             logwrite("note(N): Attempting to create file:"+ object_name)
@@ -614,8 +808,14 @@ def main():
     delete_button = ttk.Button(left_frame, text="Delete", command=delete_selected)
     delete_button.pack(side=tk.LEFT, padx=5, pady=3)
     global frm
+    global camerax
+    global cameray
+    global cameraz
+    global camerarotx
+    global cameraroty
     frm = editorenv(master=editor, height=600, width=400)
     frm.animate = 10
+    #frm.setpos(camerax,cameray,cameraz,camerarotx,cameraroty) #uncommenting this causes pil to freak out **restart required**
     frm.pack(fill=tk.BOTH, expand=True)
 
     # Add a "+" button to create a new ".kasset" object
@@ -774,7 +974,7 @@ def main():
                 path_entry.insert(0, path)
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
-                #do some crap here to edit
+                #TODO: make a second tab for script editing
             else:
                 logwrite("note(N): Edit type: Normal/model")
                 # Initialize variables to store model data
@@ -849,7 +1049,7 @@ def main():
                 image_entry.grid(row=4, column=1, padx=5, pady=5)
                 image_entry.insert(0, image)  # Insert image path data into entry field
 
-                # Add a "Save" button to save changes
+                #TODO: Add a "Save" button to save changes
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
     
