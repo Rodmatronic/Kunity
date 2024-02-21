@@ -416,13 +416,13 @@ def main():
 
         asset_selector_window.title("'" + object_name + "' Select type")
 
-        model_button = ttk.Button(asset_selector_window, text="☐ Generic asset", command=lambda: create_kasset("model"))
+        model_button = ttk.Button(asset_selector_window, text="☐ Generic asset", command=lambda: [create_kasset("model"), asset_selector_window.destroy()])
         model_button.grid(row=1, columnspan=1, pady=2, sticky=W)
 
-        cam_button = ttk.Button(asset_selector_window, text="📷 Camera", command=lambda: create_kasset("camera"))
+        cam_button = ttk.Button(asset_selector_window, text="📷 Camera", command=lambda: [create_kasset("camera"), asset_selector_window.destroy()])
         cam_button.grid(row=2, columnspan=1, pady=2, sticky=W)
 
-        src_button = ttk.Button(asset_selector_window, text="🔈Sound source", command=lambda: create_kasset("soundsrc"))
+        src_button = ttk.Button(asset_selector_window, text="🔈Sound source", command=lambda: [create_kasset("soundsrc"), asset_selector_window.destroy()])
         src_button.grid(row=3, columnspan=1, pady=2, sticky=W)
 
     def create_kasset(type):
