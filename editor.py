@@ -70,11 +70,7 @@ def compileandrun():
         print(campos)
         print(camrot)
         print(camid)
-        #GL.glLoadIdentity()
-        #GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        #GL.glTranslatef(campos[0],campos[1],campos[2])
-        #RenderAll()
-        #gc.collect()
+       
         frm.setpos(campos[0],campos[1],campos[2],camrot[0],camrot[1])
     except OSError as err:
         logwrite(err)
@@ -142,7 +138,7 @@ def RenderAll():
         if not vertices or not edges:
             if not rot or not pos or not camid:
                 if not sound_path:
-                    logwrite(f"Incomplete data in the asset file: {asset_file}")
+                    logwrite(f"error(!)Incomplete data in the asset file: {asset_file}")
                     continue  # Move to the next asset file
             else:
                 #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
@@ -222,8 +218,9 @@ def renderXYdepth():
 def load_texture(texture_path):
     try:
         texture_image = Image.open(texture_path)
-    except IOError as ex:
-        print("Failed to open texture file:", texture_path)
+    except IOError as err:
+        logwrite("error(!): Failed to open texture file: "+texture_path)
+        logwrite("error(!): "+err)
         return None
     
     texture_data = texture_image.tobytes("raw", "RGBA", 0, -1)
@@ -396,7 +393,7 @@ def main():
         if object_name:
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
-                print("Created file:", object_name)
+                print("note(N): Created file:", object_name)
                 
                 file.write(str("[Kunity soundsrc]\nsound_path: NULL"))
             # Refresh the file view
@@ -411,7 +408,7 @@ def main():
         if object_name:
             # Create a new file with the given name and the ".kasset" extension
             with open(f"./scene/Assets/scripts/{object_name}.py", "w") as file:
-                print("Created file:", object_name)
+                print("note(N): Created file:", object_name)
                 
                 file.write(str('def start():\n  print("Hello, World!")'))
             # Refresh the file view
@@ -455,11 +452,11 @@ def main():
             create_script()
         elif type == "model":
             # Check if the name is not empty
-            print("Attempting to create file:", object_name)
+            logwrite("note(N): Attempting to create file:"+ object_name)
             if object_name:
                 # Create a new file with the given name and the ".kasset" extension
                 with open(f"./scene/Assets/{object_name}.kasset", "w") as file:
-                    print("Created file:", object_name)
+                    logwrite("note(N): Created file:"+ object_name)
                     file.write("[Kunity object]\nVertices: 0.0 0.0 0.0\nEdges:\nColors:\nSurfaces:")
                 # Refresh the file view
                 tree.delete(*tree.get_children())
@@ -471,13 +468,13 @@ def main():
         for item in selected_items:
             file_name = tree.item(item, "text")
             file_path = os.path.join("./scene/Assets/", file_name)
-            print("Attempting to delete file:", file_path)
+            logwrite("note(N): Attempting to delete file:"+ file_path)
             try:
                 # Remove the file from the file system
                 os.remove(file_path)
                 # Delete the item from the Treeview
                 tree.delete(item)
-                print("File deleted successfully.")
+                logwrite("note(N): File deleted successfully.")
             except FileNotFoundError:
                 try:
                     file_path = os.path.join("./scene/Assets/scripts/", file_name)
@@ -485,7 +482,7 @@ def main():
                     os.remove(file_path)
                     # Delete the item from the Treeview
                     tree.delete(item)
-                    print("File deleted successfully.")
+                    logwrite("note(N): File deleted successfully.")
                 except FileNotFoundError:
                     try:
                         file_path = os.path.join("./scene/Assets/materials/", file_name)
