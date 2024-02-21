@@ -336,7 +336,7 @@ def main():
     root.bind("<KeyRelease>", on_key_release)
 
     def donothing():
-        print("Placeholder")
+        pass
 
     def open_about():
         logwrite("About menu open")
@@ -490,9 +490,9 @@ def main():
                         os.remove(file_path)
                         # Delete the item from the Treeview
                         tree.delete(item)
-                        print("File deleted successfully.")
+                        logwrite("note(N): File deleted successfully.")
                     except FileNotFoundError:
-                        print("File not found:", file_path)
+                        logwrite("error(!): File not found:"+ file_path)
 
     # Set dark mode theme
     style = ttk.Style()
@@ -636,14 +636,14 @@ def main():
 
         # Check if the position input is valid
         if len(position) != 3:
-            print("Invalid position input. Please enter three values separated by spaces for X, Y, and Z.")
+            logwrite("error(!): Invalid position input. Please enter three values separated by spaces for X, Y, and Z.")
             return
 
         try:
             # Attempt to convert position components to float
             position = [float(coord) for coord in position]
         except ValueError:
-            print("Invalid position input. Please enter numeric values for X, Y, and Z.")
+            logwrite("error(!): Invalid position input. Please enter numeric values for X, Y, and Z.")
             return
 
         # Apply the position changes to the vertices
@@ -658,7 +658,7 @@ def main():
             file.write(f"Surfaces: {updated_surfaces}\n")
             file.write(f"Image: {updated_image}\n")
 
-        print("Changes saved successfully!")
+        logwrite("note(N): Changes saved successfully!")
 
     def save_camera_changes(position_entry, rotation_entry, id_entry, file_path):
         updated_position = position_entry.get()
@@ -670,7 +670,7 @@ def main():
             file.write(f"pos: {updated_position}\n")
             file.write(f"rot: {updated_rotation}\n")
             file.write(f"id: {updated_id}\n")
-        print("Changes saved successfully!")
+        logwrite("note(N): Changes saved successfully!")
 
     def set_vertices_to_position(vertices_str, position):
         # Split the vertices string into individual vertices
@@ -709,7 +709,7 @@ def main():
             model_data = file.readlines()
             first_line = model_data[0].strip()
             if first_line == "[Kunity camera]":
-                print("Edit type: Camera")
+                logwrite("note(N): Edit type: Camera")
                 pos = ""
                 rot = ""
                 id = ""
@@ -744,9 +744,9 @@ def main():
                 save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_camera_changes(position_entry, rotation_entry, id_entry, file_path))
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity soundsrc]":
-                print("Edit type: Sound")
+                logwrite("note(N): Edit type: Sound")
             else:
-                print("Edit type: Normal/model")
+                logwrite("note(N): Edit type: Normal/model")
                 # Initialize variables to store model data
                 vertices = ""
                 edges = ""
