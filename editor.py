@@ -234,10 +234,9 @@ def stopplay():
     pygame.mixer.stop()
     #TODO make it also set camera back when window changed
 def RenderAll():
-   
+    #types = ("./scene/Assets/*.kasset",".scene/Assets/*.py")
     # Find all .kasset files in the specified directory
-    asset_files = glob.glob("./scene/Assets/*.kasset")
-    
+    asset_files = glob.glob("./scene/Assets/*.py") + glob.glob("./scene/Assets/*.kasset")
     if iscompile == 0:
         {
             renderXYdepth()
@@ -253,100 +252,108 @@ def RenderAll():
         image_path = None  # Initialize image path variable
         pos = []
         rot = []
+        sound_path = None
+        script_path = None
         global camid
         global campos
         global camrot
         iscam = False
         # Read data from the asset file
         with open(asset_file, "r") as file:
-            for line in file:
-                if line.startswith("Vertices:"):
-                    vertices_data = line.split(":")[1].strip().split(",")
-                    vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
-                elif line.startswith("Edges:"):
-                    edges_data = line.split(":")[1].strip().split(",")
-                    edges = [tuple(map(int, edge.split())) for edge in edges_data]
-                elif line.startswith("Colors:"):
-                    colors_data = line.split(":")[1].strip().split(",")
-                    face_colors = [tuple(map(float, color.split())) for color in colors_data]  # Store face colors separately
-                elif line.startswith("Surfaces:"):
-                    surfaces_data = line.split(":")[1].strip().split(",")
-                    surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
-                elif line.startswith("Image:"):  # Check for image path flag
-                    image_path = line.split(":")[1].strip()  # Extract image path
-                elif line.startswith("pos:"):
-                    pos_data = line.split(":")[1].strip().split(",")
-                    pos = [tuple(map(float, poss.split())) for poss in pos_data]
-                elif line.startswith("rot:"):
-                    rot_data = line.split(":")[1].strip().split(",")
-                    rot = [tuple(map(float, rots.split())) for rots in rot_data]
-                elif line.startswith("id:"):
-                    camid = line.split(":")[1].strip()
-                elif line.startswith("sound_path:"):
-                    sound_path = line.split(":")[1].strip()
-                elif line.startswith("script_path:"):
-                    sound_path = line.split(":")[1].strip()
-        # Check if all necessary data has been read
-        if not vertices or not edges:
-            if not rot or not pos or not camid:
-                if not sound_path:
-                    logwrite(f"error(!): Incomplete data in the asset file: {asset_file}")
-                    continue  # Move to the next asset file
-                else:
-                    #It is a sound file!
-                    if iscompile == 1:
-                        #it is running
-                        #TODO: put some code here to make the sound able to be script controled
-                        #TODO: DONE: link this to its sound path 
-                         
-                       
-                        # Load a sound file 
-                        sound_file =sound_path
-                        if sound_file != "NULL":
-                            if pygame.mixer.get_busy():
-                                pass
-                            else:
-                                sound = pygame.mixer.Sound(sound_file)  
-    
-                                # Play the sound
-                                sound.play() 
-                        else:
-                            pass
-                            #pygame.mixer.stop()                           
-                        
- 
-                    else:
-                        pass
-                    
-            else:
-                #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
-                iscam = True
-                campos = pos[0]
-                camrot = rot[0]
-                camid = camid
-                
-        # If image path is specified, draw textured quads
-        if image_path and iscam == False:
-            # Load the texture
-            texture_id = load_texture(image_path)
-            # Draw textured quad for each surface
-            for surface in surfaces:
-                draw_textured_quad(texture_id, vertices, surface)
-        else:
-            if iscam == False:
-                GL.glBegin(GL.GL_QUADS)
-                for surface, color in zip(surfaces, face_colors): 
-                    for vertex in surface:
-                        GL.glColor3fv(color)
-                        if vertex < len(vertices):
-                            GL.glVertex3fv(vertices[vertex])
-                        else:
-                            logwrite(f"error(!): Index {vertex} is out of range for vertices list with length {len(vertices)}")
-                
-                GL.glEnd()
-            else:
-                #do nothing
+            if asset_file.endswith('.py'):
+                #script in tree
                 pass
+            else:
+                for line in file:
+                    if line.startswith("Vertices:"):
+                        vertices_data = line.split(":")[1].strip().split(",")
+                        vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
+                    elif line.startswith("Edges:"):
+                        edges_data = line.split(":")[1].strip().split(",")
+                        edges = [tuple(map(int, edge.split())) for edge in edges_data]
+                    elif line.startswith("Colors:"):
+                        colors_data = line.split(":")[1].strip().split(",")
+                        face_colors = [tuple(map(float, color.split())) for color in colors_data]  # Store face colors separately
+                    elif line.startswith("Surfaces:"):
+                        surfaces_data = line.split(":")[1].strip().split(",")
+                        surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
+                    elif line.startswith("Image:"):  # Check for image path flag
+                        image_path = line.split(":")[1].strip()  # Extract image path
+                    elif line.startswith("pos:"):
+                        pos_data = line.split(":")[1].strip().split(",")
+                        pos = [tuple(map(float, poss.split())) for poss in pos_data]
+                    elif line.startswith("rot:"):
+                        rot_data = line.split(":")[1].strip().split(",")
+                        rot = [tuple(map(float, rots.split())) for rots in rot_data]
+                    elif line.startswith("id:"):
+                        camid = line.split(":")[1].strip()
+                    elif line.startswith("sound_path:"):
+                        sound_path = line.split(":")[1].strip()
+                    elif line.startswith("script_path:"):
+                        script_path = line.split(":")[1].strip()
+
+                # Check if all necessary data has been read
+                if not vertices or not edges:
+                    if not rot or not pos or not camid:
+                        if not sound_path:
+                            if not script_path:
+                                logwrite(f"error(!): Incomplete data in the asset file: {asset_file}")
+                                continue  # Move to the next asset file
+                        else:
+                            #It is a sound file!
+                            if iscompile == 1:
+                                #it is running
+                                #TODO: put some code here to make the sound able to be script controled
+                                #TODO: DONE: link this to its sound path 
+                                 
+                               
+                                # Load a sound file 
+                                sound_file =sound_path
+                                if sound_file != "NULL":
+                                    if pygame.mixer.get_busy():
+                                        pass
+                                    else:
+                                        sound = pygame.mixer.Sound(sound_file)  
+            
+                                        # Play the sound
+                                        sound.play() 
+                                else:
+                                    pass
+                                    #pygame.mixer.stop()                           
+                                
+         
+                            else:
+                                pass
+                            
+                    else:
+                        #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
+                        iscam = True
+                        campos = pos[0]
+                        camrot = rot[0]
+                        camid = camid
+                        
+                # If image path is specified, draw textured quads
+                if image_path and iscam == False:
+                    # Load the texture
+                    texture_id = load_texture(image_path)
+                    # Draw textured quad for each surface
+                    for surface in surfaces:
+                        draw_textured_quad(texture_id, vertices, surface)
+                else:
+                    if iscam == False:
+                        GL.glBegin(GL.GL_QUADS)
+                        for surface, color in zip(surfaces, face_colors): 
+                            for vertex in surface:
+                                GL.glColor3fv(color)
+                                if vertex < len(vertices):
+                                    GL.glVertex3fv(vertices[vertex])
+                                else:
+                                    logwrite(f"error(!): Index {vertex} is out of range for vertices list with length {len(vertices)}")
+                        
+                        GL.glEnd()
+                    else:
+                        #do nothing
+                        pass
 
 def draw_textured_quad(texture_id, vertices, surface):
     # Convert texture_id to integer if necessary
