@@ -236,7 +236,7 @@ def stopplay():
 def RenderAll():
     #types = ("./scene/Assets/*.kasset",".scene/Assets/*.py")
     # Find all .kasset files in the specified directory
-    asset_files = glob.glob("./scene/Assets/*.py") + glob.glob("./scene/Assets/*.kasset")
+    asset_files = glob.glob("./scene/Assets/*.py") + glob.glob("./scene/Assets/*.kasset") + glob.glob("./scene/Assets/scripts/*.py") #detects standalone scripts (to be depricated) and scripts in the scripts dir
     if iscompile == 0:
         {
             renderXYdepth()
@@ -258,12 +258,13 @@ def RenderAll():
         global campos
         global camrot
         iscam = False
-        # Read data from the asset file
+        # Read data from the file
         with open(asset_file, "r") as file:
             if asset_file.endswith('.py'):
-                #script in tree
+                #this file is a script
                 pass
             else:
+                #this file is a asset
                 for line in file:
                     if line.startswith("Vertices:"):
                         vertices_data = line.split(":")[1].strip().split(",")
