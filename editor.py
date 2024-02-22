@@ -29,6 +29,7 @@ iscompile = 0
 camcount = 2 #NOTE: 1 should be reserved
 skybox_enabled = True
 antialiasing_enabled = True
+dither_enabled = False
 #campos = None
 #camrot = None 
 #camid = None
@@ -146,6 +147,7 @@ def save_settings():
     with open("kunity.config", "w") as f:
         f.write(f"Skybox={skybox_enabled}\n")
         f.write(f"Antialiasing={antialiasing_enabled}\n")
+        f.write(f"Dither={dither_enabled}\n")
         logwrite("Saved!'")
 
 def load_settings():
@@ -159,6 +161,8 @@ def load_settings():
                     skybox_enabled = value == "True"
                 elif key == "Antialiasing":
                     antialiasing_enabled = value == "True"
+                elif key == "Dither":
+                    dither_enabled = value == "True"
     except FileNotFoundError:
         logwrite("Loading settings from 'kunity.config' failed. No such file")
         skybox_enabled == True
@@ -373,6 +377,7 @@ def load_texture(texture_path):
 class editorenv(OpenGLFrame):
     def initgl(self):
         global antialiasing_enabled
+        global dither_enabled
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         
@@ -392,12 +397,17 @@ class editorenv(OpenGLFrame):
             GL.glEnable(GL.GL_LINE_SMOOTH)
             GL.glEnable(GL.GL_POLYGON_SMOOTH)
             GL.glEnable(GL.GL_POINT_SMOOTH)
+            GL.glEnable(GL.GL_SAMPLE_SHADING)
         else:
             GL.glDisable(GL.GL_LINE_SMOOTH)
             GL.glDisable(GL.GL_POLYGON_SMOOTH)
             GL.glDisable(GL.GL_POINT_SMOOTH)
-        #GL.glEnable(GL.GL_DITHER)
-        GL.glEnable(GL.GL_SAMPLE_SHADING)
+            GL.glDisable(GL.GL_SAMPLE_SHADING)
+        if dither_enabled == True:
+            GL.glEnable(GL.GL_DITHER)
+        else:
+            GL.glDisable(GL.GL_DITHER)
+        
         
         GL.glMinSampleShading(1.0)
         if not hasattr(self, "shader"):
@@ -537,6 +547,11 @@ def main():
             global antialiasing_enabled
             antialiasing_enabled = antialiasing_var.get()
             save_settings()
+            
+        def update_dither():
+            global dither_enabled
+            dither_enabled = dither_var.get()
+            save_settings()
         
         pref_window = Toplevel(root)
         pref_window.geometry("700x500")
@@ -560,8 +575,12 @@ def main():
         antialiasing_checkbox = Checkbutton(pref_window, text="Enable Antialiasing", variable=antialiasing_var, command=update_antialiasing, fg="#111", bg="dark grey")
         antialiasing_checkbox.pack(pady=10, padx=15, anchor="w")
         antialiasing_checkbox.select() if antialiasing_enabled else antialiasing_checkbox.deselect()
-
-
+        
+        dither_var = BooleanVar()
+        dither_checkbox = Checkbutton(pref_window, text="Enable dither", variable=dither_var,command=update_dither(),fg="#111",bg="dark grey")
+        dither_checkbox.pack(pady=10, padx=15, anchor="w")
+        dither_checkbox.select() if dither_enabled else dither_checkbox.deselect()
+        
     def open_about():
         logwrite("About menu open")
         top = Toplevel(root) #undefined * import tk
