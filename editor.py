@@ -380,6 +380,8 @@ class editorenv(OpenGLFrame):
         
         if skybox_enabled == True:
             GL.glClearColor(0.4, 0.5, 1.0, 1.0)
+        else:
+            pass
         GL.glEnable(GL.GL_BLEND)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_PROGRAM_POINT_SIZE)
@@ -388,10 +390,15 @@ class editorenv(OpenGLFrame):
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
         if antialiasing_enabled == True:
             GL.glEnable(GL.GL_LINE_SMOOTH)
-        GL.glEnable(GL.GL_POLYGON_SMOOTH) 
+            GL.glEnable(GL.GL_POLYGON_SMOOTH)
+            GL.glEnable(GL.GL_POINT_SMOOTH)
+        else:
+            GL.glDisable(GL.GL_LINE_SMOOTH)
+            GL.glDisable(GL.GL_POLYGON_SMOOTH)
+            GL.glDisable(GL.GL_POINT_SMOOTH)
         #GL.glEnable(GL.GL_DITHER)
         GL.glEnable(GL.GL_SAMPLE_SHADING)
-        GL.glEnable(GL.GL_POINT_SMOOTH)
+        
         GL.glMinSampleShading(1.0)
         if not hasattr(self, "shader"):
            self.shader = OpenGL.GL.shaders.compileProgram(
