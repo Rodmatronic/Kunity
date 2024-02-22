@@ -1,5 +1,20 @@
+#TODO: write scripting guide for game development
+""" 
+kunity game engine scripting guide:
+
+
+
+
+
+
+
+
+
+
+"""
+
 import tkinter as tk
-import tkinter.filedialog as filedialog #not used
+import tkinter.filedialog as filedialog #not used yet
 from tkinter import ttk
 from tkinter import *
 from tkinter import messagebox 
@@ -281,7 +296,7 @@ def RenderAll():
                     if iscompile == 1:
                         #it is running
                         #TODO: put some code here to make the sound able to be script controled
-                        #TODO link this to its sound path :3
+                        #TODO: DONE: link this to its sound path 
                          
                        
                         # Load a sound file 
