@@ -32,12 +32,15 @@ import platform
 import shutil 
 import time
 import pygame 
+
 # Some global configurations
 global_ver = "0.14"
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
 global campos
 global camrot
+global singleshotonrun
+singleshotonrun = False
 global camid
 iscompile = 0
 camcount = 2 #NOTE: 1 should be reserved
@@ -221,6 +224,8 @@ def compileandrun():
     
 
 def stopplay():
+    global singleshotonrun
+    singleshotonrun = False
     global camerax
     global cameray
     global cameraz
@@ -257,12 +262,23 @@ def RenderAll():
         global camid
         global campos
         global camrot
+        global singleshotonrun
         iscam = False
         # Read data from the file
         with open(asset_file, "r") as file:
-            if asset_file.endswith('.py'):
-                #this file is a script
-                pass
+            if asset_file.endswith(".py"):
+                #this file is a scripts
+                if iscompile == 1:#checks if game is running
+                    if singleshotonrun == False:
+                        
+                        exec(open(asset_file).read())
+                        
+                        singleshotonrun = True
+                    else:
+                        pass
+                    
+                else:
+                    pass
             else:
                 #this file is a asset
                 for line in file:
@@ -1018,6 +1034,12 @@ def main():
             file.write("[Kunity script]\n")
             file.write(f"script_path: {updated_path}\n")
         logwrite("note(N): Changes saved successfully!")
+    def save_sound_changes(path_entry, file_path):
+        updated_path = path_entry.get()
+        with open(file_path, "w") as file:
+            file.write("[Kunity soundsrc]\n")
+            file.write(f"sound_path: {updated_path}\n")
+        logwrite("note(N): Changes saved successfully!")
     def save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path):
         # Get the updated data from the entry fields
         updated_vertices = vertices_entry.get()
@@ -1147,7 +1169,7 @@ def main():
                 path_entry = ttk.Entry(model_options_window)
                 path_entry.grid(row=1, column=1, padx=5, pady=5)
                 path_entry.insert(0, path)
-                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
+                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_sound_changes(path_entry, file_path))#TODO: j
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity script]":
                 logwrite("note(N): Edit type: Script")

@@ -1,5 +1,7 @@
-def __init__():
-    print("hello_world")
-    
-def hi():
-    print("hi")
+
+def OnStart():
+    print("start")
+def OnLoop():
+    print("loop")
+def OnRender():
+    print("frame called")
