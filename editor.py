@@ -231,6 +231,7 @@ def stopplay():
     iscompile = 0
     logwrite("Stop")
     frm.setpos(camerax,cameray,cameraz,camerarotx,cameraroty)
+    pygame.mixer.stop()
     #TODO make it also set camera back when window changed
 def RenderAll():
    
