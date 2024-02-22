@@ -1,5 +1,20 @@
+#TODO: write scripting guide for game development
+""" 
+kunity game engine scripting guide:
+
+
+
+
+
+
+
+
+
+
+"""
+
 import tkinter as tk
-import tkinter.filedialog as filedialog #not used
+import tkinter.filedialog as filedialog #not used yet
 from tkinter import ttk
 from tkinter import *
 from tkinter import messagebox 
@@ -7,7 +22,6 @@ from PIL import Image, ImageTk
 from pyopengltk import OpenGLFrame
 from OpenGL import GL, GLU, GLUT
 import OpenGL.GL.shaders
-
 import ctypes
 import types
 import numpy
@@ -17,7 +31,7 @@ import gc
 import platform
 import shutil 
 import time
-
+import pygame 
 # Some global configurations
 global_ver = "0.14"
 global_year = "2024"
@@ -29,6 +43,7 @@ iscompile = 0
 camcount = 2 #NOTE: 1 should be reserved
 skybox_enabled = True
 antialiasing_enabled = True
+dither_enabled = False
 #campos = None
 #camrot = None 
 #camid = None
@@ -36,7 +51,7 @@ root = tk.Tk()
 root.geometry("1100x600")
 root.title("New Scene - " + "Kunity " + global_year + " " + global_ver + " (Python version " + platform.python_version() + ")")
 # root.iconbitmap("logo.ico")
-
+pygame.mixer.init()
 try:
     os.remove("Kunity.logfile.txt") 
 except:
@@ -146,11 +161,12 @@ def save_settings():
     with open("kunity.config", "w") as f:
         f.write(f"Skybox={skybox_enabled}\n")
         f.write(f"Antialiasing={antialiasing_enabled}\n")
+        f.write(f"Dither={dither_enabled}\n")
         logwrite("Saved!'")
 
 def load_settings():
     logwrite("Loading settings from 'kunity.config'")
-    global skybox_enabled, antialiasing_enabled
+    global skybox_enabled, antialiasing_enabled, dither_enabled
     try:
         with open("kunity.config", "r") as f:
             for line in f:
@@ -159,6 +175,8 @@ def load_settings():
                     skybox_enabled = value == "True"
                 elif key == "Antialiasing":
                     antialiasing_enabled = value == "True"
+                elif key == "Dither":
+                    dither_enabled = value == "True"
     except FileNotFoundError:
         logwrite("Loading settings from 'kunity.config' failed. No such file")
         skybox_enabled == True
@@ -200,6 +218,7 @@ def compileandrun():
         messagebox.showinfo("showerror", "No Valid Camera in Scene") 
         logwrite("error(!): No Valid Camera in Scene")
         logwrite("warn(W): Non-Fatal exception caught ")
+    
 
 def stopplay():
     global camerax
@@ -212,12 +231,12 @@ def stopplay():
     iscompile = 0
     logwrite("Stop")
     frm.setpos(camerax,cameray,cameraz,camerarotx,cameraroty)
+    pygame.mixer.stop()
     #TODO make it also set camera back when window changed
 def RenderAll():
-   
+    #types = ("./scene/Assets/*.kasset",".scene/Assets/*.py")
     # Find all .kasset files in the specified directory
-    asset_files = glob.glob("./scene/Assets/*.kasset")
-    
+    asset_files = glob.glob("./scene/Assets/*.py") + glob.glob("./scene/Assets/*.kasset") + glob.glob("./scene/Assets/scripts/*.py") #detects standalone scripts (to be depricated) and scripts in the scripts dir
     if iscompile == 0:
         {
             renderXYdepth()
@@ -233,74 +252,109 @@ def RenderAll():
         image_path = None  # Initialize image path variable
         pos = []
         rot = []
+        sound_path = None
+        script_path = None
         global camid
         global campos
         global camrot
         iscam = False
-        # Read data from the asset file
+        # Read data from the file
         with open(asset_file, "r") as file:
-            for line in file:
-                if line.startswith("Vertices:"):
-                    vertices_data = line.split(":")[1].strip().split(",")
-                    vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
-                elif line.startswith("Edges:"):
-                    edges_data = line.split(":")[1].strip().split(",")
-                    edges = [tuple(map(int, edge.split())) for edge in edges_data]
-                elif line.startswith("Colors:"):
-                    colors_data = line.split(":")[1].strip().split(",")
-                    face_colors = [tuple(map(float, color.split())) for color in colors_data]  # Store face colors separately
-                elif line.startswith("Surfaces:"):
-                    surfaces_data = line.split(":")[1].strip().split(",")
-                    surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
-                elif line.startswith("Image:"):  # Check for image path flag
-                    image_path = line.split(":")[1].strip()  # Extract image path
-                elif line.startswith("pos:"):
-                    pos_data = line.split(":")[1].strip().split(",")
-                    pos = [tuple(map(float, poss.split())) for poss in pos_data]
-                elif line.startswith("rot:"):
-                    rot_data = line.split(":")[1].strip().split(",")
-                    rot = [tuple(map(float, rots.split())) for rots in rot_data]
-                elif line.startswith("id:"):
-                    camid = line.split(":")[1].strip()
-                elif line.startswith("sound_path:"):
-                    sound_path = line.split(":")[1].strip()
-                elif line.startswith("script_path:"):
-                    sound_path = line.split(":")[1].strip()
-        # Check if all necessary data has been read
-        if not vertices or not edges:
-            if not rot or not pos or not camid:
-                if not sound_path:
-                    logwrite(f"error(!): Incomplete data in the asset file: {asset_file}")
-                    continue  # Move to the next asset file
-            else:
-                #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
-                iscam = True
-                campos = pos[0]
-                camrot = rot[0]
-                camid = camid
-                
-        # If image path is specified, draw textured quads
-        if image_path and iscam == False:
-            # Load the texture
-            texture_id = load_texture(image_path)
-            # Draw textured quad for each surface
-            for surface in surfaces:
-                draw_textured_quad(texture_id, vertices, surface)
-        else:
-            if iscam == False:
-                GL.glBegin(GL.GL_QUADS)
-                for surface, color in zip(surfaces, face_colors): 
-                    for vertex in surface:
-                        GL.glColor3fv(color)
-                        if vertex < len(vertices):
-                            GL.glVertex3fv(vertices[vertex])
-                        else:
-                            logwrite(f"error(!): Index {vertex} is out of range for vertices list with length {len(vertices)}")
-                
-                GL.glEnd()
-            else:
-                #do nothing
+            if asset_file.endswith('.py'):
+                #this file is a script
                 pass
+            else:
+                #this file is a asset
+                for line in file:
+                    if line.startswith("Vertices:"):
+                        vertices_data = line.split(":")[1].strip().split(",")
+                        vertices = [tuple(map(float, vertex.split())) for vertex in vertices_data]
+                    elif line.startswith("Edges:"):
+                        edges_data = line.split(":")[1].strip().split(",")
+                        edges = [tuple(map(int, edge.split())) for edge in edges_data]
+                    elif line.startswith("Colors:"):
+                        colors_data = line.split(":")[1].strip().split(",")
+                        face_colors = [tuple(map(float, color.split())) for color in colors_data]  # Store face colors separately
+                    elif line.startswith("Surfaces:"):
+                        surfaces_data = line.split(":")[1].strip().split(",")
+                        surfaces = [tuple(map(int, surface.split())) for surface in surfaces_data]
+                    elif line.startswith("Image:"):  # Check for image path flag
+                        image_path = line.split(":")[1].strip()  # Extract image path
+                    elif line.startswith("pos:"):
+                        pos_data = line.split(":")[1].strip().split(",")
+                        pos = [tuple(map(float, poss.split())) for poss in pos_data]
+                    elif line.startswith("rot:"):
+                        rot_data = line.split(":")[1].strip().split(",")
+                        rot = [tuple(map(float, rots.split())) for rots in rot_data]
+                    elif line.startswith("id:"):
+                        camid = line.split(":")[1].strip()
+                    elif line.startswith("sound_path:"):
+                        sound_path = line.split(":")[1].strip()
+                    elif line.startswith("script_path:"):
+                        script_path = line.split(":")[1].strip()
+
+                # Check if all necessary data has been read
+                if not vertices or not edges:
+                    if not rot or not pos or not camid:
+                        if not sound_path:
+                            if not script_path:
+                                logwrite(f"error(!): Incomplete data in the asset file: {asset_file}")
+                                continue  # Move to the next asset file
+                        else:
+                            #It is a sound file!
+                            if iscompile == 1:
+                                #it is running
+                                #TODO: put some code here to make the sound able to be script controled
+                                #TODO: DONE: link this to its sound path 
+                                 
+                               
+                                # Load a sound file 
+                                sound_file =sound_path
+                                if sound_file != "NULL":
+                                    if pygame.mixer.get_busy():
+                                        pass
+                                    else:
+                                        sound = pygame.mixer.Sound(sound_file)  
+            
+                                        # Play the sound
+                                        sound.play() 
+                                else:
+                                    pass
+                                    #pygame.mixer.stop()                           
+                                
+         
+                            else:
+                                pass
+                            
+                    else:
+                        #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
+                        iscam = True
+                        campos = pos[0]
+                        camrot = rot[0]
+                        camid = camid
+                        
+                # If image path is specified, draw textured quads
+                if image_path and iscam == False:
+                    # Load the texture
+                    texture_id = load_texture(image_path)
+                    # Draw textured quad for each surface
+                    for surface in surfaces:
+                        draw_textured_quad(texture_id, vertices, surface)
+                else:
+                    if iscam == False:
+                        GL.glBegin(GL.GL_QUADS)
+                        for surface, color in zip(surfaces, face_colors): 
+                            for vertex in surface:
+                                GL.glColor3fv(color)
+                                if vertex < len(vertices):
+                                    GL.glVertex3fv(vertices[vertex])
+                                else:
+                                    logwrite(f"error(!): Index {vertex} is out of range for vertices list with length {len(vertices)}")
+                        
+                        GL.glEnd()
+                    else:
+                        #do nothing
+                        pass
 
 def draw_textured_quad(texture_id, vertices, surface):
     # Convert texture_id to integer if necessary
@@ -373,6 +427,7 @@ def load_texture(texture_path):
 class editorenv(OpenGLFrame):
     def initgl(self):
         global antialiasing_enabled
+        global dither_enabled
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         
@@ -380,6 +435,8 @@ class editorenv(OpenGLFrame):
         
         if skybox_enabled == True:
             GL.glClearColor(0.4, 0.5, 1.0, 1.0)
+        else:
+            pass
         GL.glEnable(GL.GL_BLEND)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_PROGRAM_POINT_SIZE)
@@ -388,10 +445,20 @@ class editorenv(OpenGLFrame):
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
         if antialiasing_enabled == True:
             GL.glEnable(GL.GL_LINE_SMOOTH)
-        GL.glEnable(GL.GL_POLYGON_SMOOTH) 
-        #GL.glEnable(GL.GL_DITHER)
-        GL.glEnable(GL.GL_SAMPLE_SHADING)
-        GL.glEnable(GL.GL_POINT_SMOOTH)
+            GL.glEnable(GL.GL_POLYGON_SMOOTH)
+            GL.glEnable(GL.GL_POINT_SMOOTH)
+            GL.glEnable(GL.GL_SAMPLE_SHADING)
+        else:
+            GL.glDisable(GL.GL_LINE_SMOOTH)
+            GL.glDisable(GL.GL_POLYGON_SMOOTH)
+            GL.glDisable(GL.GL_POINT_SMOOTH)
+            GL.glDisable(GL.GL_SAMPLE_SHADING)
+        if dither_enabled == True:
+            GL.glEnable(GL.GL_DITHER)
+        else:
+            GL.glDisable(GL.GL_DITHER)
+        
+        
         GL.glMinSampleShading(1.0)
         if not hasattr(self, "shader"):
            self.shader = OpenGL.GL.shaders.compileProgram(
@@ -530,6 +597,11 @@ def main():
             global antialiasing_enabled
             antialiasing_enabled = antialiasing_var.get()
             save_settings()
+            
+        def update_dither():
+            global dither_enabled
+            dither_enabled = dither_var.get()
+            save_settings()
         
         pref_window = Toplevel(root)
         pref_window.geometry("700x500")
@@ -553,8 +625,12 @@ def main():
         antialiasing_checkbox = Checkbutton(pref_window, text="Enable Antialiasing", variable=antialiasing_var, command=update_antialiasing, fg="#111", bg="dark grey")
         antialiasing_checkbox.pack(pady=10, padx=15, anchor="w")
         antialiasing_checkbox.select() if antialiasing_enabled else antialiasing_checkbox.deselect()
-
-
+        
+        dither_var = BooleanVar()
+        dither_checkbox = Checkbutton(pref_window, text="Enable dither", variable=dither_var,command=update_dither(),fg="#111",bg="dark grey")
+        dither_checkbox.pack(pady=10, padx=15, anchor="w")
+        dither_checkbox.select() if dither_enabled else dither_checkbox.deselect()
+        
     def open_about():
         logwrite("About menu open")
         top = Toplevel(root) #undefined * import tk
@@ -1062,6 +1138,17 @@ def main():
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity soundsrc]":
                 logwrite("note(N): Edit type: Sound")
+                path = ""
+                for line in model_data:
+                    if line.startswith("sound_path:"):
+                        path = line.split(":")[1].strip()
+                path_label = ttk.Label(model_options_window, text="sound path:")
+                path_label.grid(row=1, column=0, padx=6, sticky="w")
+                path_entry = ttk.Entry(model_options_window)
+                path_entry.grid(row=1, column=1, padx=5, pady=5)
+                path_entry.insert(0, path)
+                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
+                save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity script]":
                 logwrite("note(N): Edit type: Script")
                 path = ""
