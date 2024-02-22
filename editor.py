@@ -270,9 +270,9 @@ def RenderAll():
                 #this file is a scripts
                 if iscompile == 1:#checks if game is running
                     if singleshotonrun == False:
-                        exvar = 1
+                        
                         exec(open(asset_file).read())
-                        print(exvar)
+                        
                         singleshotonrun = True
                     else:
                         pass
@@ -1034,6 +1034,12 @@ def main():
             file.write("[Kunity script]\n")
             file.write(f"script_path: {updated_path}\n")
         logwrite("note(N): Changes saved successfully!")
+    def save_sound_changes(path_entry, file_path):
+        updated_path = path_entry.get()
+        with open(file_path, "w") as file:
+            file.write("[Kunity soundsrc]\n")
+            file.write(f"sound_path: {updated_path}\n")
+        logwrite("note(N): Changes saved successfully!")
     def save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path):
         # Get the updated data from the entry fields
         updated_vertices = vertices_entry.get()
@@ -1163,7 +1169,7 @@ def main():
                 path_entry = ttk.Entry(model_options_window)
                 path_entry.grid(row=1, column=1, padx=5, pady=5)
                 path_entry.insert(0, path)
-                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
+                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_sound_changes(path_entry, file_path))#TODO: j
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity script]":
                 logwrite("note(N): Edit type: Script")
