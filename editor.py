@@ -7,7 +7,6 @@ from PIL import Image, ImageTk
 from pyopengltk import OpenGLFrame
 from OpenGL import GL, GLU, GLUT
 import OpenGL.GL.shaders
-
 import ctypes
 import types
 import numpy
@@ -17,7 +16,7 @@ import gc
 import platform
 import shutil 
 import time
-
+import pygame 
 # Some global configurations
 global_ver = "0.14"
 global_year = "2024"
@@ -37,7 +36,7 @@ root = tk.Tk()
 root.geometry("1100x600")
 root.title("New Scene - " + "Kunity " + global_year + " " + global_ver + " (Python version " + platform.python_version() + ")")
 # root.iconbitmap("logo.ico")
-
+pygame.mixer.init()
 try:
     os.remove("Kunity.logfile.txt") 
 except:
@@ -152,7 +151,7 @@ def save_settings():
 
 def load_settings():
     logwrite("Loading settings from 'kunity.config'")
-    global skybox_enabled, antialiasing_enabled
+    global skybox_enabled, antialiasing_enabled, dither_enabled
     try:
         with open("kunity.config", "r") as f:
             for line in f:
@@ -204,6 +203,7 @@ def compileandrun():
         messagebox.showinfo("showerror", "No Valid Camera in Scene") 
         logwrite("error(!): No Valid Camera in Scene")
         logwrite("warn(W): Non-Fatal exception caught ")
+    
 
 def stopplay():
     global camerax
@@ -276,6 +276,32 @@ def RenderAll():
                 if not sound_path:
                     logwrite(f"error(!): Incomplete data in the asset file: {asset_file}")
                     continue  # Move to the next asset file
+                else:
+                    #It is a sound file!
+                    if iscompile == 1:
+                        #it is running
+                        #TODO: put some code here to make the sound able to be script controled
+                        #TODO link this to its sound path :3
+                         
+                       
+                        # Load a sound file 
+                        sound_file =sound_path
+                        if sound_file != "NULL":
+                            if pygame.mixer.get_busy():
+                                pass
+                            else:
+                                sound = pygame.mixer.Sound(sound_file)  
+    
+                                # Play the sound
+                                sound.play() 
+                        else:
+                            pass
+                            #pygame.mixer.stop()                           
+                        
+ 
+                    else:
+                        pass
+                    
             else:
                 #print("camera at: "+str(pos)+"camera rotation: "+str(rot)+"camera id: "+str(camid))
                 iscam = True
@@ -1088,6 +1114,17 @@ def main():
                 save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity soundsrc]":
                 logwrite("note(N): Edit type: Sound")
+                path = ""
+                for line in model_data:
+                    if line.startswith("sound_path:"):
+                        path = line.split(":")[1].strip()
+                path_label = ttk.Label(model_options_window, text="sound path:")
+                path_label.grid(row=1, column=0, padx=6, sticky="w")
+                path_entry = ttk.Entry(model_options_window)
+                path_entry.grid(row=1, column=1, padx=5, pady=5)
+                path_entry.insert(0, path)
+                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
+                save_button.grid(row=6, columnspan=2, pady=10)
             elif first_line == "[Kunity script]":
                 logwrite("note(N): Edit type: Script")
                 path = ""
