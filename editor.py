@@ -27,6 +27,8 @@ global camrot
 global camid
 iscompile = 0
 camcount = 2 #NOTE: 1 should be reserved
+skybox_enabled = True
+antialiasing_enabled = True
 #campos = None
 #camrot = None 
 #camid = None
@@ -120,7 +122,50 @@ void main()
     FragColor = texColor;
 }
 """#TODO: make a gui to open .frag glsl source
+
+# Set dark mode theme
+style = ttk.Style()
+style.theme_use('clam')  # Use 'clam' theme as it's closer to dark mode
+style.configure("TFrame", background="#222")
+style.configure(".", background="#484848", foreground="#ddd", bordercolor="000", font="Calibri")  # Default background and foreground colors
+style.configure("TEntry", foreground="White", background="#FFF", fieldbackground="#FFF", bordercolor="#222")  
+
+# Configure style for Treeview
+style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333")
+style.map("Treeview", background=[('selected', '#2c5d87')])
+
+# Configure style for buttons
+style.map("TButton", background=[('active', '#ddd')])  # Hover state: slightly lighter grey background
+style.map("TButton", background=[('pressed', '#222')])  # Pressed state: dark grey background
+style.map("TEntry", foreground="White", background="#333")  # Pressed state: dark grey background
+
 logwrite("KUNITY logfile --- \\/\n---------------------")
+
+def save_settings():
+    logwrite("Saving settings to 'kunity.config'")
+    with open("kunity.config", "w") as f:
+        f.write(f"Skybox={skybox_enabled}\n")
+        f.write(f"Antialiasing={antialiasing_enabled}\n")
+        logwrite("Saved!'")
+
+def load_settings():
+    logwrite("Loading settings from 'kunity.config'")
+    global skybox_enabled, antialiasing_enabled
+    try:
+        with open("kunity.config", "r") as f:
+            for line in f:
+                key, value = line.strip().split("=")
+                if key == "Skybox":
+                    skybox_enabled = value == "True"
+                elif key == "Antialiasing":
+                    antialiasing_enabled = value == "True"
+    except FileNotFoundError:
+        logwrite("Loading settings from 'kunity.config' failed. No such file")
+        skybox_enabled == True
+        antialiasing_enabled == True
+        pass
+
+load_settings()
 
 def populate_tree(tree, node, parent=""):
     if os.path.isdir(node):
@@ -327,19 +372,22 @@ def load_texture(texture_path):
 
 class editorenv(OpenGLFrame):
     def initgl(self):
+        global antialiasing_enabled
         GL.glLoadIdentity()
         GLU.gluPerspective(45, (self.width / self.height), 0.1, 50.0)
         
         GL.glTranslatef(0.0, 0.0, -5)
-         
-        GL.glClearColor(0.4, 0.5, 1.0, 1.0)
+        
+        if skybox_enabled == True:
+            GL.glClearColor(0.4, 0.5, 1.0, 1.0)
         GL.glEnable(GL.GL_BLEND)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_PROGRAM_POINT_SIZE)
         GL.glEnable(GL.GL_MULTISAMPLE); 
         GL.glEnable(GL.GL_SAMPLE_ALPHA_TO_COVERAGE)
         GL.glEnable(GL.GL_TEXTURE_2D)  # Enable 2D texturing
-        GL.glEnable(GL.GL_LINE_SMOOTH)
+        if antialiasing_enabled == True:
+            GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glEnable(GL.GL_POLYGON_SMOOTH) 
         #GL.glEnable(GL.GL_DITHER)
         GL.glEnable(GL.GL_SAMPLE_SHADING)
@@ -470,6 +518,43 @@ def main():
     def donothing():
         pass
 
+    def pref_window():
+        logwrite("Prefs menu open")
+
+        def update_skybox():
+            global skybox_enabled
+            skybox_enabled = skybox_var.get()
+            save_settings()
+
+        def update_antialiasing():
+            global antialiasing_enabled
+            antialiasing_enabled = antialiasing_var.get()
+            save_settings()
+        
+        pref_window = Toplevel(root)
+        pref_window.geometry("700x500")
+        pref_window.title("Preferences")
+        pref_window.configure(bg="#333")
+        pref_window.resizable(False, False)
+        pref_window.attributes('-topmost', True)
+
+        label_pref = ttk.Label(pref_window, text="These require a restart of Kunity to be applied!", background="#333", foreground="#FFFFFF")
+        label_pref.pack(padx=8, pady=10, side= TOP, anchor="w")
+
+        canvas=Canvas(pref_window, width=700, bg="#444", height=3, highlightthickness=0, relief='ridge')
+        canvas.pack()
+
+        skybox_var = BooleanVar()
+        skybox_checkbox = Checkbutton(pref_window, text="Enable Skybox", variable=skybox_var, command=update_skybox, fg="#111", bg="dark grey")
+        skybox_checkbox.pack(pady=10, padx=15, anchor="w")
+        skybox_checkbox.select() if skybox_enabled else skybox_checkbox.deselect()
+
+        antialiasing_var = BooleanVar()
+        antialiasing_checkbox = Checkbutton(pref_window, text="Enable Antialiasing", variable=antialiasing_var, command=update_antialiasing, fg="#111", bg="dark grey")
+        antialiasing_checkbox.pack(pady=10, padx=15, anchor="w")
+        antialiasing_checkbox.select() if antialiasing_enabled else antialiasing_checkbox.deselect()
+
+
     def open_about():
         logwrite("About menu open")
         top = Toplevel(root) #undefined * import tk
@@ -594,6 +679,7 @@ def main():
                 file.write(str('#version 130\n'))
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+
     def create_tese_glsl():
         object_name = new_object_entry.get()
 
@@ -606,6 +692,7 @@ def main():
                 file.write(str('#version 130\n'))
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+
     def create_comp_glsl():
         object_name = new_object_entry.get()
 
@@ -618,6 +705,7 @@ def main():
                 file.write(str('#version 130\n'))
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+
     def create_glsl():
         object_name = new_object_entry.get()
 
@@ -630,6 +718,7 @@ def main():
                 file.write(str('#version 130\n'))
             tree.delete(*tree.get_children())
             populate_tree(tree, "./scene")
+
     def create_kasset_menu():
         # Create a new Toplevel window for the model options
         asset_selector_window = Toplevel(root)
@@ -725,22 +814,6 @@ def main():
                     except FileNotFoundError:
                         logwrite("error(!): File not found:"+ file_path)
 
-    # Set dark mode theme
-    style = ttk.Style()
-    style.theme_use('clam')  # Use 'clam' theme as it's closer to dark mode
-    style.configure("TFrame", background="#222")
-    style.configure(".", background="#484848", foreground="#ddd", bordercolor="000", font="Calibri")  # Default background and foreground colors
-    style.configure("TEntry", foreground="White", background="#FFF", fieldbackground="#FFF", bordercolor="#222")  
-
-    # Configure style for Treeview
-    style.configure("Treeview", background="#333", foreground="#ddd", fieldbackground="#333")
-    style.map("Treeview", background=[('selected', '#2c5d87')])
-
-    # Configure style for buttons
-    style.map("TButton", background=[('active', '#ddd')])  # Hover state: slightly lighter grey background
-    style.map("TButton", background=[('pressed', '#222')])  # Pressed state: dark grey background
-    style.map("TEntry", foreground="White", background="#333")  # Pressed state: dark grey background
-
     menubar = Menu(root)
     filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="New Scene", command=donothing)
@@ -764,6 +837,8 @@ def main():
     editmenu.add_command(label="Paste", command=paste)
     editmenu.add_separator()
     editmenu.add_command(label="Rename", command=rename)
+    editmenu.add_separator()
+    editmenu.add_command(label="Preferences...", command=pref_window)
 
     windowmenu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Window", menu=windowmenu)
