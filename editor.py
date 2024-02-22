@@ -32,12 +32,15 @@ import platform
 import shutil 
 import time
 import pygame 
+
 # Some global configurations
 global_ver = "0.14"
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
 global campos
 global camrot
+global singleshotonrun
+singleshotonrun = False
 global camid
 iscompile = 0
 camcount = 2 #NOTE: 1 should be reserved
@@ -221,6 +224,8 @@ def compileandrun():
     
 
 def stopplay():
+    global singleshotonrun
+    singleshotonrun = False
     global camerax
     global cameray
     global cameraz
@@ -257,12 +262,23 @@ def RenderAll():
         global camid
         global campos
         global camrot
+        global singleshotonrun
         iscam = False
         # Read data from the file
         with open(asset_file, "r") as file:
-            if asset_file.endswith('.py'):
-                #this file is a script
-                pass
+            if asset_file.endswith(".py"):
+                #this file is a scripts
+                if iscompile == 1:#checks if game is running
+                    if singleshotonrun == False:
+                        exvar = 1
+                        exec(open(asset_file).read())
+                        print(exvar)
+                        singleshotonrun = True
+                    else:
+                        pass
+                    
+                else:
+                    pass
             else:
                 #this file is a asset
                 for line in file:
