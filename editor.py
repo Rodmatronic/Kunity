@@ -2,6 +2,24 @@
 """ 
 kunity game engine scripting guide:
 
+    The less opengl calls per frame the better your frametimes, try to turn your script into a compute shader
+    
+    avoid using loops or delays/expencive functions in framedrawing, it can cause the engine to lock up, try tomake it a compute shaderor run it on a differant 
+    thread or optimise your code.
+    
+    try not to use highpoly models at any distance, try implementing lods to fall back to lowpoly models & textures at a distance
+    
+    respect the garbage collector, call it when its needed to save memory but if you call it to liberaly it will negatively effect your frames and can even cause worse memory usage
+    
+    if you are implementing particles making it a pane that faces the players (billboard) is gpu expencive try using shaders to get volumetric particles
+    better visuals at better preformance
+    
+    try to call functions when their needed not every frame, a single if statement can tank your frametimes
+    
+    be sure when writing shaders try to make them work on nivida & amd cores it will save tons of headache as a developer to test it and not have disapointed fans
+    
+    
+    
 
 
 
@@ -34,7 +52,7 @@ import time
 import pygame 
 
 # Some global configurations
-global_ver = "0.16"
+global_ver = "0.17" #id say we earned a version number += 0.1 ngl
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
 global campos
@@ -76,7 +94,7 @@ def copy():
 def paste():
     pass
 def rename():
-    pass
+    pass#TODO: read the file line by line, put it in list, delete file make new file with selected name, fill file using list 
 def compileShader(source, shaderType):
     """
     uses code from: https://github.com/jonwright/pyopengltk/blob/master/examples/shader_example.py
