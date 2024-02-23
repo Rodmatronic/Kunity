@@ -427,6 +427,45 @@ def draw_textured_quad(texture_id, vertices, surface):
     GL.glDeleteTextures(texture_id)
 def bytestr(s):
     return s.encode("utf-8") + b"\000"
+
+def obj_to_kasset(objfile):
+    #objfile = "C:/Users/Owner/Documents/test4new/AK-47.obj"
+    v = []
+    vn = []
+    vt = []
+    f = []
+    e = [] #edges
+    with open(objfile,"r") as file:
+        for line in file:
+            
+            if line.startswith("vn"):
+                vn.append([line.replace('vn',"").replace('\n','').split(" ")[1], #vertex normal
+                           line.replace('vn',"").replace('\n','').split(" ")[2],
+                           line.replace('vn',"").replace('\n','').split(" ")[3]])
+            elif line.startswith("vt"):
+                vt.append([line.replace('vt',"").replace('\n','').split(" ")[1],
+                           line.replace('vt',"").replace('\n','').split(" ")[2],
+                           line.replace('vt',"").replace('\n','').split(" ")[3]]) # reference number for a texture vertex in the face element
+            elif line.startswith("f"):
+                f.append([line.replace('f',"").replace('\n','').split(" ")[1],
+                           line.replace('f',"").replace('\n','').split(" ")[2],
+                           line.replace('f',"").replace('\n','').split(" ")[3]]) #faces
+            elif line.startswith("v"):
+                v.append([line.replace('v',"").replace('\n','').split(" ")[1],
+                           line.replace('v',"").replace('\n','').split(" ")[2],
+                           line.replace('v',"").replace('\n','').split(" ")[3]])#vertices
+            else:
+                #print(str(line))
+                pass
+    for i in f:
+        for o in i:
+            e.append(o)#edges
+    print(v)
+    print(vn)
+    print(vt)
+    print(f)
+    print(e)# the ____//____ is vert number to vert number edge
+    return v,vn,vt,f,e
 def renderXYdepth():
     color = (global_scene_noshade_brightness)
 
