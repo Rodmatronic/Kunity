@@ -34,7 +34,7 @@ import time
 import pygame 
 
 # Some global configurations
-global_ver = "0.14"
+global_ver = "0.16"
 global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
 global campos
@@ -678,7 +678,30 @@ def main():
         Label(top, text="Powered by:", bg="#333", fg="White",font=('Mistral 10 bold')).place(x=42, y=180)
 
         Label(top, text="Ver " + global_ver + " " + global_year + ", python version " + platform.python_version(), bg="#333", fg="White",font=('Mistral 10 bold')).place(x=22, y=145)
-    
+
+    def image_preview(image_path):
+        logwrite("note(N): Preview image")
+        top = Toplevel()  # Create a new Toplevel window
+        top.title("Image Previewer")
+        top.configure(bg="#333")
+        top.attributes('-topmost', True)
+        # top.iconbitmap("logo.ico")
+
+        # Load the image
+        image = PhotoImage(file=image_path)
+        
+        # Get the dimensions of the image
+        width = image.width()
+        height = image.height()
+
+        # Set the window size based on the image dimensions
+        top.geometry(f"{width}x{height}")
+
+        # Create a label to display the image
+        image_label = Label(top, image=image, bg="#333")
+        image_label.image = image  # Keep a reference to the image to prevent it from being garbage collected
+        image_label.pack()
+
     def create_camera(camid):#creates camera with id (so you can have more than one camera)
         object_name = new_object_entry.get()
 
@@ -1106,6 +1129,24 @@ def main():
         return ", ".join(updated_vertices)
 
     def show_model_options():
+
+        def find_file_in_assets(file_name, directory):
+            # Iterate over all items in the directory
+            for item in os.listdir(directory):
+                # Get the full path of the item
+                item_path = os.path.join(directory, item)
+                # If the item is a directory, recursively search inside it
+                if os.path.isdir(item_path):
+                    result = find_file_in_assets(file_name, item_path)
+                    # If the file is found inside this subdirectory, return its path
+                    if result:
+                        return result
+                # If the item is a file and its name matches the target file name, return its path
+                elif os.path.isfile(item_path) and item == file_name:
+                    return item_path
+            # If the file is not found in this directory or any subdirectory, return None
+            return None
+
         # Create a new Toplevel window for the model options
         model_options_window = Toplevel(root)
         model_options_window.resizable(False, False)  # Making the window unresizable
@@ -1115,153 +1156,178 @@ def main():
         # Retrieve the selected item from the tree view
         selected_item = tree.selection()[0]
         file_name = tree.item(selected_item, "text")
-        file_path = os.path.join("./scene/Assets/", file_name)
+
+        assets_dir = "./scene/Assets/"
+        file_path = find_file_in_assets(file_name, assets_dir)
+
+        if file_path:
+            print("File found at path:", file_path)
+        else:
+            print("File not found in the Assets directory or its subdirectories.")
 
         model_options_window.title("'" + file_name + "' Options")
 
         # Read data from the selected model file
-        with open(file_path, "r") as file:
-            model_data = file.readlines()
-            first_line = model_data[0].strip()
-            if first_line == "[Kunity camera]":
-                logwrite("note(N): Edit type: Camera")
-                pos = ""
-                rot = ""
-                id = ""
+        if not (file_name.endswith(".png") or file_name.endswith(".jpg") or file_name.endswith(".jpeg")):
+            with open(file_path, "r") as file:
+                model_data = file.readlines()
+                first_line = model_data[0].strip()
+                if first_line == "[Kunity camera]":
+                    logwrite("note(N): Edit type: Camera")
+                    pos = ""
+                    rot = ""
+                    id = ""
 
-                for line in model_data:
-                    if line.startswith("pos:"):
-                        pos = line.split(":")[1].strip()
-                    elif line.startswith("rot:"):
-                        rot = line.split(":")[1].strip()
-                    elif line.startswith("id:"):
-                        id = line.split(":")[1].strip()
+                    for line in model_data:
+                        if line.startswith("pos:"):
+                            pos = line.split(":")[1].strip()
+                        elif line.startswith("rot:"):
+                            rot = line.split(":")[1].strip()
+                        elif line.startswith("id:"):
+                            id = line.split(":")[1].strip()
 
-                rotation_label = ttk.Label(model_options_window, text="Rotation (X Y Z):")
-                rotation_label.grid(row=1, column=0, padx=6, sticky="w")
-                rotation_entry = ttk.Entry(model_options_window)
-                rotation_entry.grid(row=1, column=1, padx=5, pady=5)
-                rotation_entry.insert(0, rot)
+                    rotation_label = ttk.Label(model_options_window, text="Rotation (X Y Z):")
+                    rotation_label.grid(row=1, column=0, padx=6, sticky="w")
+                    rotation_entry = ttk.Entry(model_options_window)
+                    rotation_entry.grid(row=1, column=1, padx=5, pady=5)
+                    rotation_entry.insert(0, rot)
 
-                position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
-                position_label.grid(row=5, column=0, padx=6, sticky="w")
-                position_entry = ttk.Entry(model_options_window)
-                position_entry.grid(row=5, column=1, padx=5, pady=5)
-                position_entry.insert(0, pos)
+                    position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
+                    position_label.grid(row=5, column=0, padx=6, sticky="w")
+                    position_entry = ttk.Entry(model_options_window)
+                    position_entry.grid(row=5, column=1, padx=5, pady=5)
+                    position_entry.insert(0, pos)
 
-                id_label = ttk.Label(model_options_window, text="Camera ID:")
-                id_label.grid(row=2, column=0, padx=6, sticky="w")
-                id_entry = ttk.Entry(model_options_window)
-                id_entry.grid(row=2, column=1, padx=5, pady=5)
-                id_entry.insert(0, id)
+                    id_label = ttk.Label(model_options_window, text="Camera ID:")
+                    id_label.grid(row=2, column=0, padx=6, sticky="w")
+                    id_entry = ttk.Entry(model_options_window)
+                    id_entry.grid(row=2, column=1, padx=5, pady=5)
+                    id_entry.insert(0, id)
 
-                # Add a "Save" button to save changes
-                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_camera_changes(position_entry, rotation_entry, id_entry, file_path))
-                save_button.grid(row=6, columnspan=2, pady=10)
-            elif first_line == "[Kunity soundsrc]":
-                logwrite("note(N): Edit type: Sound")
-                path = ""
-                for line in model_data:
-                    if line.startswith("sound_path:"):
-                        path = line.split(":")[1].strip()
-                path_label = ttk.Label(model_options_window, text="sound path:")
-                path_label.grid(row=1, column=0, padx=6, sticky="w")
-                path_entry = ttk.Entry(model_options_window)
-                path_entry.grid(row=1, column=1, padx=5, pady=5)
-                path_entry.insert(0, path)
-                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_sound_changes(path_entry, file_path))#TODO: j
-                save_button.grid(row=6, columnspan=2, pady=10)
-            elif first_line == "[Kunity script]":
-                logwrite("note(N): Edit type: Script")
-                path = ""
-                for line in model_data:
-                    if line.startswith("script_path:"):
-                        path = line.split(":")[1].strip()
-                path_label = ttk.Label(model_options_window, text="script path:")
-                path_label.grid(row=1, column=0, padx=6, sticky="w")
-                path_entry = ttk.Entry(model_options_window)
-                path_entry.grid(row=1, column=1, padx=5, pady=5)
-                path_entry.insert(0, path)
-                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
-                save_button.grid(row=6, columnspan=2, pady=10)
-                #TODO: make a second tab for script editing
-            else:
-                logwrite("note(N): Edit type: Normal/model")
-                # Initialize variables to store model data
-                vertices = ""
-                edges = ""
-                colors = ""
-                surfaces = ""
-                image = ""
+                    # Add a "Save" button to save changes
+                    save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_camera_changes(position_entry, rotation_entry, id_entry, file_path))
+                    save_button.grid(row=6, columnspan=2, pady=10)
+                elif first_line == "[Kunity soundsrc]":
+                    logwrite("note(N): Edit type: Sound")
+                    path = ""
+                    for line in model_data:
+                        if line.startswith("sound_path:"):
+                            path = line.split(":")[1].strip()
+                    path_label = ttk.Label(model_options_window, text="sound path:")
+                    path_label.grid(row=1, column=0, padx=6, sticky="w")
+                    path_entry = ttk.Entry(model_options_window)
+                    path_entry.grid(row=1, column=1, padx=5, pady=5)
+                    path_entry.insert(0, path)
+                    save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_sound_changes(path_entry, file_path))#TODO: j
+                    save_button.grid(row=6, columnspan=2, pady=10)
+                elif first_line == "[Kunity script]":
+                    logwrite("note(N): Edit type: Script")
+                    path = ""
+                    for line in model_data:
+                        if line.startswith("script_path:"):
+                            path = line.split(":")[1].strip()
+                    path_label = ttk.Label(model_options_window, text="script path:")
+                    path_label.grid(row=1, column=0, padx=6, sticky="w")
+                    path_entry = ttk.Entry(model_options_window)
+                    path_entry.grid(row=1, column=1, padx=5, pady=5)
+                    path_entry.insert(0, path)
+                    save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
+                    save_button.grid(row=6, columnspan=2, pady=10)
+                    #TODO: make a second tab for script editing
+                elif first_line == "�PNG":
+                    logwrite("note(N): Image view")
+                    path = ""
+                    for line in model_data:
+                        if line.startswith("script_path:"):
+                            path = line.split(":")[1].strip()
+                    path_label = ttk.Label(model_options_window, text="script path:")
+                    path_label.grid(row=1, column=0, padx=6, sticky="w")
+                    path_entry = ttk.Entry(model_options_window)
+                    path_entry.grid(row=1, column=1, padx=5, pady=5)
+                    path_entry.insert(0, path)
+                    save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_script_changes(path_entry, file_path))
+                    save_button.grid(row=6, columnspan=2, pady=10)
+                    #TODO: make a second tab for script editing
+                else:
+                    logwrite("note(N): Edit type: Normal/model")
+                    # Initialize variables to store model data
+                    vertices = ""
+                    edges = ""
+                    colors = ""
+                    surfaces = ""
+                    image = ""
 
-                # Parse model data and extract vertices, edges, colors, surfaces, and image
-                for line in model_data:
-                    if line.startswith("Vertices:"):
-                        vertices = line.split(":")[1].strip()
-                    elif line.startswith("Edges:"):
-                        edges = line.split(":")[1].strip()
-                    elif line.startswith("Colors:"):
-                        colors = line.split(":")[1].strip()
-                    elif line.startswith("Surfaces:"):
-                        surfaces = line.split(":")[1].strip()
-                    elif line.startswith("Image:"):
-                        image = line.split(":")[1].strip()
+                    # Parse model data and extract vertices, edges, colors, surfaces, and image
+                    for line in model_data:
+                        if line.startswith("Vertices:"):
+                            vertices = line.split(":")[1].strip()
+                        elif line.startswith("Edges:"):
+                            edges = line.split(":")[1].strip()
+                        elif line.startswith("Colors:"):
+                            colors = line.split(":")[1].strip()
+                        elif line.startswith("Surfaces:"):
+                            surfaces = line.split(":")[1].strip()
+                        elif line.startswith("Image:"):
+                            image = line.split(":")[1].strip()
 
-                # Calculate the average of X, Y, and Z coordinates for all vertices
-                total_x, total_y, total_z = 0, 0, 0
-                num_vertices = 0
-                for vertex in vertices.split(","):
-                    x, y, z = map(float, vertex.strip().split())
-                    total_x += x
-                    total_y += y
-                    total_z += z
-                    num_vertices += 1
+                    # Calculate the average of X, Y, and Z coordinates for all vertices
+                    total_x, total_y, total_z = 0, 0, 0
+                    num_vertices = 0
+                    for vertex in vertices.split(","):
+                        x, y, z = map(float, vertex.strip().split())
+                        total_x += x
+                        total_y += y
+                        total_z += z
+                        num_vertices += 1
 
-                avg_x = total_x / num_vertices
-                avg_y = total_y / num_vertices
-                avg_z = total_z / num_vertices
+                    avg_x = total_x / num_vertices
+                    avg_y = total_y / num_vertices
+                    avg_z = total_z / num_vertices
 
-                # Add labels and entry fields for model options
-                vertices_label = ttk.Label(model_options_window, text="Vertices:")
-                vertices_label.grid(row=0, column=0, padx=6, sticky="w")
-                vertices_entry = ttk.Entry(model_options_window)
-                vertices_entry.grid(row=0, column=1, padx=5, pady=5)
-                vertices_entry.insert(0, vertices)  # Insert vertices data into entry field
+                    # Add labels and entry fields for model options
+                    vertices_label = ttk.Label(model_options_window, text="Vertices:")
+                    vertices_label.grid(row=0, column=0, padx=6, sticky="w")
+                    vertices_entry = ttk.Entry(model_options_window)
+                    vertices_entry.grid(row=0, column=1, padx=5, pady=5)
+                    vertices_entry.insert(0, vertices)  # Insert vertices data into entry field
 
-                # Add a label and entry field for the position
-                position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
-                position_label.grid(row=5, column=0, padx=6, sticky="w")
-                position_entry = ttk.Entry(model_options_window)
-                position_entry.grid(row=5, column=1, padx=5, pady=5)
-                position_entry.insert(0, f"{avg_x} {avg_y} {avg_z}")  # Insert average position data into entry field
+                    # Add a label and entry field for the position
+                    position_label = ttk.Label(model_options_window, text="Position (X Y Z):")
+                    position_label.grid(row=5, column=0, padx=6, sticky="w")
+                    position_entry = ttk.Entry(model_options_window)
+                    position_entry.grid(row=5, column=1, padx=5, pady=5)
+                    position_entry.insert(0, f"{avg_x} {avg_y} {avg_z}")  # Insert average position data into entry field
 
-                edges_label = ttk.Label(model_options_window, text="Edges:")
-                edges_label.grid(row=1, column=0, padx=6, sticky="w")
-                edges_entry = ttk.Entry(model_options_window)
-                edges_entry.grid(row=1, column=1, padx=5, pady=5)
-                edges_entry.insert(0, edges)  # Insert edges data into entry field
+                    edges_label = ttk.Label(model_options_window, text="Edges:")
+                    edges_label.grid(row=1, column=0, padx=6, sticky="w")
+                    edges_entry = ttk.Entry(model_options_window)
+                    edges_entry.grid(row=1, column=1, padx=5, pady=5)
+                    edges_entry.insert(0, edges)  # Insert edges data into entry field
 
-                colors_label = ttk.Label(model_options_window, text="Colors (RGB):")
-                colors_label.grid(row=2, column=0, padx=6, sticky="w")
-                colors_entry = ttk.Entry(model_options_window)
-                colors_entry.grid(row=2, column=1, padx=5, pady=5)
-                colors_entry.insert(0, colors)  # Insert colors data into entry field
+                    colors_label = ttk.Label(model_options_window, text="Colors (RGB):")
+                    colors_label.grid(row=2, column=0, padx=6, sticky="w")
+                    colors_entry = ttk.Entry(model_options_window)
+                    colors_entry.grid(row=2, column=1, padx=5, pady=5)
+                    colors_entry.insert(0, colors)  # Insert colors data into entry field
 
-                surfaces_label = ttk.Label(model_options_window, text="Surfaces:")
-                surfaces_label.grid(row=3, column=0, padx=6, sticky="w")
-                surfaces_entry = ttk.Entry(model_options_window)
-                surfaces_entry.grid(row=3, column=1, padx=5, pady=5)
-                surfaces_entry.insert(0, surfaces)  # Insert surfaces data into entry field
+                    surfaces_label = ttk.Label(model_options_window, text="Surfaces:")
+                    surfaces_label.grid(row=3, column=0, padx=6, sticky="w")
+                    surfaces_entry = ttk.Entry(model_options_window)
+                    surfaces_entry.grid(row=3, column=1, padx=5, pady=5)
+                    surfaces_entry.insert(0, surfaces)  # Insert surfaces data into entry field
 
-                image_label = ttk.Label(model_options_window, text="Image:")
-                image_label.grid(row=4, column=0, padx=6, sticky="w")
-                image_entry = ttk.Entry(model_options_window)
-                image_entry.grid(row=4, column=1, padx=5, pady=5)
-                image_entry.insert(0, image)  # Insert image path data into entry field
+                    image_label = ttk.Label(model_options_window, text="Image:")
+                    image_label.grid(row=4, column=0, padx=6, sticky="w")
+                    image_entry = ttk.Entry(model_options_window)
+                    image_entry.grid(row=4, column=1, padx=5, pady=5)
+                    image_entry.insert(0, image)  # Insert image path data into entry field
 
-                #TODO: Add a "Save" button to save changes
-                save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
-                save_button.grid(row=6, columnspan=2, pady=10)
+                    #TODO: Add a "Save" button to save changes
+                    save_button = ttk.Button(model_options_window, text="Save", command=lambda: save_model_changes(vertices_entry, edges_entry, colors_entry, surfaces_entry, image_entry, position_entry, file_path))
+                    save_button.grid(row=6, columnspan=2, pady=10)
+        else:
+            model_options_window.destroy()
+            image_preview(file_path)
     
     def option1_action():
         show_model_options()
@@ -1269,7 +1335,7 @@ def main():
     # Create a context menu
     context_menu = Menu(root, tearoff=0)
     context_menu.add_command(label="New...", command=create_kasset_menu)
-    context_menu.add_command(label="Edit model...", command=option1_action)
+    context_menu.add_command(label="Edit/view object", command=option1_action)
 
     tree.bind("<Button-3>", on_tree_right_click)  # Bind right-click event to the function
 
