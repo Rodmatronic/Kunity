@@ -43,6 +43,7 @@ import OpenGL.GL.shaders
 import ctypes
 import types
 import numpy
+import datetime
 import os
 import glob
 import gc
@@ -52,8 +53,11 @@ import time
 import pygame 
 
 # Some global configurations
+today = datetime.date.today()
+
+global_year = str( today.year)
 global_ver = "0.17" #id say we earned a version number += 0.1 ngl
-global_year = "2024"
+#global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
 global campos
 global camrot
