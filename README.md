@@ -8,8 +8,7 @@ The game engine includes:
 if you want to help the development ring up @Rodmatronic
 
 TODO:
-- code editor -V #2
-           python api layer to the engines functions
+- code editor & python api layer to the engines functions #2 
 - obj mesh support #5
-- settings #4
-- shadercode support #3
+- lighting #22
+- scene packing #7
