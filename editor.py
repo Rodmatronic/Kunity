@@ -73,7 +73,7 @@ dither_enabled = False
 #camrot = None 
 #camid = None
 root = tk.Tk()
-root.geometry("1100x600")
+root.geometry("1100x600")#TODO: make this configurable in settings
 root.title("New Scene - " + "Kunity " + global_year + " " + global_ver + " (Python version " + platform.python_version() + ")")
 # root.iconbitmap("logo.ico")
 pygame.mixer.init()
@@ -120,6 +120,7 @@ def compileShader(source, shaderType):
     if not(result):
         # TODO: this will be wrong if the user has
         # disabled traditional unpacking array support.
+        logwrite("shader compile failure")
         raise RuntimeError(
             """Shader compile failure (%s): %s""" % (
                 result,
