@@ -2,6 +2,24 @@
 """ 
 kunity game engine scripting guide:
 
+    The less opengl calls per frame the better your frametimes, try to turn your script into a compute shader
+    
+    avoid using loops or delays/expencive functions in framedrawing, it can cause the engine to lock up, try tomake it a compute shaderor run it on a differant 
+    thread or optimise your code.
+    
+    try not to use highpoly models at any distance, try implementing lods to fall back to lowpoly models & textures at a distance
+    
+    respect the garbage collector, call it when its needed to save memory but if you call it to liberaly it will negatively effect your frames and can even cause worse memory usage
+    
+    if you are implementing particles making it a pane that faces the players (billboard) is gpu expencive try using shaders to get volumetric particles
+    better visuals at better preformance
+    
+    try to call functions when their needed not every frame, a single if statement can tank your frametimes
+    
+    be sure when writing shaders try to make them work on nivida & amd cores it will save tons of headache as a developer to test it and not have disapointed fans
+    
+    
+    
 
 
 
@@ -25,6 +43,7 @@ import OpenGL.GL.shaders
 import ctypes
 import types
 import numpy
+import datetime
 import os
 import glob
 import gc
@@ -34,8 +53,11 @@ import time
 import pygame 
 
 # Some global configurations
-global_ver = "0.16"
-global_year = "2024"
+today = datetime.date.today()
+
+global_year = str( today.year)
+global_ver = "0.17" #id say we earned a version number += 0.1 ngl
+#global_year = "2024"
 global_scene_noshade_brightness = 3.0, 3.0, 3.0
 global campos
 global camrot
@@ -51,7 +73,7 @@ dither_enabled = False
 #camrot = None 
 #camid = None
 root = tk.Tk()
-root.geometry("1100x600")
+root.geometry("1100x600")#TODO: make this configurable in settings
 root.title("New Scene - " + "Kunity " + global_year + " " + global_ver + " (Python version " + platform.python_version() + ")")
 # root.iconbitmap("logo.ico")
 pygame.mixer.init()
@@ -76,7 +98,7 @@ def copy():
 def paste():
     pass
 def rename():
-    pass
+    pass#TODO: read the file line by line, put it in list, delete file make new file with selected name, fill file using list 
 def compileShader(source, shaderType):
     """
     uses code from: https://github.com/jonwright/pyopengltk/blob/master/examples/shader_example.py
@@ -98,6 +120,7 @@ def compileShader(source, shaderType):
     if not(result):
         # TODO: this will be wrong if the user has
         # disabled traditional unpacking array support.
+        logwrite("shader compile failure")
         raise RuntimeError(
             """Shader compile failure (%s): %s""" % (
                 result,
@@ -404,6 +427,45 @@ def draw_textured_quad(texture_id, vertices, surface):
     GL.glDeleteTextures(texture_id)
 def bytestr(s):
     return s.encode("utf-8") + b"\000"
+
+def obj_to_kasset(objfile):
+    #objfile = "C:/Users/Owner/Documents/test4new/AK-47.obj"
+    v = []
+    vn = []
+    vt = []
+    f = []
+    e = [] #edges
+    with open(objfile,"r") as file:
+        for line in file:
+            
+            if line.startswith("vn"):
+                vn.append([line.replace('vn',"").replace('\n','').split(" ")[1], #vertex normal
+                           line.replace('vn',"").replace('\n','').split(" ")[2],
+                           line.replace('vn',"").replace('\n','').split(" ")[3]])
+            elif line.startswith("vt"):
+                vt.append([line.replace('vt',"").replace('\n','').split(" ")[1],
+                           line.replace('vt',"").replace('\n','').split(" ")[2],
+                           line.replace('vt',"").replace('\n','').split(" ")[3]]) # reference number for a texture vertex in the face element
+            elif line.startswith("f"):
+                f.append([line.replace('f',"").replace('\n','').split(" ")[1],
+                           line.replace('f',"").replace('\n','').split(" ")[2],
+                           line.replace('f',"").replace('\n','').split(" ")[3]]) #faces
+            elif line.startswith("v"):
+                v.append([line.replace('v',"").replace('\n','').split(" ")[1],
+                           line.replace('v',"").replace('\n','').split(" ")[2],
+                           line.replace('v',"").replace('\n','').split(" ")[3]])#vertices
+            else:
+                #print(str(line))
+                pass
+    for i in f:
+        for o in i:
+            e.append(o)#edges
+    print(v)
+    print(vn)
+    print(vt)
+    print(f)
+    print(e)# the ____//____ is vert number to vert number edge
+    return v,vn,vt,f,e
 def renderXYdepth():
     color = (global_scene_noshade_brightness)
 
